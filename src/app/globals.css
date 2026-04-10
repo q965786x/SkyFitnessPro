@@ -1,0 +1,22 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  overflow-y: hidden;
+}
+
+body {
+  font-family: var (--font-roboto), 'Arial';
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+}
+
+a, input, button {
+  font-family: var (--font-roboto), 'Arial';
+}
+
+a {
+  text-decoration: none;
+}
