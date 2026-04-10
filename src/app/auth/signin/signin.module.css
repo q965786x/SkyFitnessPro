@@ -1,29 +1,23 @@
-.wrapper {
-    width: 100%;
-    min-height: 100%;
-    overflow: hidden;
-}
-
-.containerEnter {
-    max-width: 100%;
-    height: 100vh;
-    margin: 0 auto;
-    position: relative;
-    background-color: rgba(0, 0, 0, 0.85);
-}
-
 .modal__block {
     position: absolute;
     z-index: 2;
-    left: calc(50% - (366px / 2));
-    top: calc(50% - (439px / 2));
+    left: calc(50% - (360px / 2));
+    top: calc(50% - (425px / 2));
+    opacity: 1;
+}
+
+.modal__blockWithError {
+    position: absolute;
+    z-index: 2;
+    left: calc(50% - (360px / 2));
+    top: calc(50% - (465px / 2));
     opacity: 1;
 }
 
 .modal__form {
-    width: 366px;
+    width: 360px;
     background-color: #ffffff;
-    border-radius: 12px;
+    border-radius: 30px;
     display: -webkit-box;
     display: -ms-flexbox;
     display: flex;
@@ -34,7 +28,7 @@
     -webkit-box-align: center;
     -ms-flex-align: center;
     align-items: center;
-    padding: 43px 44px 47px 40px;
+    padding: 43px 0px 47px 0px;
 }
 
 .modal__form input:first-child {
@@ -57,69 +51,66 @@
 }
 
 .modal__logo {
-    width: 140px;
-    height: 21px;
-    margin-bottom: 34px;
+    width: 220px;
+    height: 35px;
+    margin-bottom: 48px;
     background-color: transparent;
 }
 
-.modal__logo img {
-    width: 140px;
-    height: auto;
-}
-
 .modal__input {
-    width: 100%;
-    border-top: none;
-    border-left: none;
-    border-right: none;
-    border-bottom: 1px solid #d0cece;
-    padding: 8px 1px;
+    width: 280px;
+    height: 52px;
+    border: 1px solid #D0CECE;   
+    margin-bottom: 10px;    
 }
 
 .modal__input::-webkit-input-placeholder {
     font-style: normal;
     font-weight: 400;
     font-size: 18px;
-    line-height: 24px;
+    line-height: 20px;
     letter-spacing: -0.05px;
     color: #d0cece;
+    padding: 18px 16px;
 }
 
 .modal__input:-ms-input-placeholder {
     font-style: normal;
     font-weight: 400;
     font-size: 18px;
-    line-height: 24px;
+    line-height: 20px;
     letter-spacing: -0.05px;
     color: #d0cece;
+    padding: 18px 16px;
 }
 
 .modal__input::-ms-input-placeholder {
     font-style: normal;
     font-weight: 400;
     font-size: 18px;
-    line-height: 24px;
+    line-height: 20px;
     letter-spacing: -0.05px;
     color: #d0cece;
+    padding: 18px 16px;
 }
 
 .modal__input::placeholder {
     font-style: normal;
     font-weight: 400;
     font-size: 18px;
-    line-height: 24px;
+    line-height: 20px;
     letter-spacing: -0.05px;
     color: #d0cece;
+    padding: 18px 16px;
 }
 
 .modal__btnEnter {
-    width: 278px;
+    width: 280px;
     height: 52px;
-    background-color: #580ea2;
-    border-radius: 6px;
-    margin-top: 60px;
-    margin-bottom: 20px;
+    background-color: #BCEC30;
+    border-radius: 46px;
+    margin-top: 34px;
+    margin-bottom: 10px;
     border: none;
     display: -webkit-box;
     display: -ms-flexbox;
@@ -132,21 +123,21 @@
     justify-content: center;
     font-weight: 400;
     font-size: 18px;
-    line-height: 24px;
+    line-height: 20px;
     letter-spacing: -0.05px;
-    color: #ffffff;
+    color: #000000;
 }
 
 .modal__btnSignup {
-    width: 278px;
+    width: 280px;
     height: 52px;
     background-color: transparent;
-    border: 1px solid #d0cece;
-    border-radius: 6px;
+    border: 1px solid #000000;
+    border-radius: 46px;
     font-style: normal;
     font-weight: 400;
     font-size: 18px;
-    line-height: 24px;
+    line-height: 20px;
     letter-spacing: -0.05px;
     color: #000000;
     display: -webkit-box;
