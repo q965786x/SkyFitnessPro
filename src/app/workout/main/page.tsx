@@ -1,4 +1,4 @@
-import styles from '@/src/app/main/page.module.css';
+import styles from './page.module.css';
 import Image from 'next/image';
 
 export default function MainPage() {
@@ -22,7 +22,7 @@ export default function MainPage() {
           <button className={styles['logout-btn']} id="logoutBtn">Выйти</button>
         </div>
 
-        {/* Блок с h1 и полем справа (текст как на скриншоте) */}
+        {/* Блок с h1 и полем справа */}
         <div className={styles['title-section']}>
           <h1 className={styles['main-title']}>Начните заниматься спортом<br />и улучшите качество жизни</h1>
           <div className={styles['info-badge']}>
@@ -48,11 +48,11 @@ export default function MainPage() {
                 src="/img/Yoga.png"
                 alt={'yoga'}
               />
-              <div className={styles['add-icon']}>
+              <div className={styles['add-icon-wrapper']}>
                 <Image 
                   width={32}
                   height={32}
-                  className={styles['add-icon']}
+                  className={styles['add-icon-image']}
                   src="/img/Add-icon.png"
                   alt={'add-icon'}
                 />
@@ -107,14 +107,14 @@ export default function MainPage() {
                 src="/img/Stretching.png"
                 alt={'stretching'}
               />
-              <div className={styles['add-icon']}>
+              <div className={styles['add-icon-wrapper']}>
                 <Image 
-                width={32}
-                height={32}
-                className={styles['add-icon']}
-                src="/img/Add-icon.png"
-                alt={'add-icon'}
-              />
+                  width={32}
+                  height={32}
+                  className={styles['add-icon-image']}
+                  src="/img/Add-icon.png"
+                  alt={'add-icon'}
+                />
               </div>
             </div>
             <div className={styles['card-content']}>
@@ -166,14 +166,14 @@ export default function MainPage() {
                 src="/img/Fitness.png"
                 alt={'fitness'}
               />
-              <div className={styles['add-icon']}>
+              <div className={styles['add-icon-wrapper']}>
                 <Image 
-                width={32}
-                height={32}
-                className={styles['add-icon']}
-                src="/img/Add-icon.png"
-                alt={'add-icon'}
-              />
+                  width={32}
+                  height={32}
+                  className={styles['add-icon-image']}
+                  src="/img/Add-icon.png"
+                  alt={'add-icon'}
+                />
               </div>
             </div>
             <div className={styles['card-content']}>
@@ -225,14 +225,14 @@ export default function MainPage() {
                 src="/img/Step.png"
                 alt={'step'}
               />
-              <div className={styles['add-icon']}>
+              <div className={styles['add-icon-wrapper']}>
                 <Image 
-                width={32}
-                height={32}
-                className={styles['add-icon']}
-                src="/img/Add-icon.png"
-                alt={'add-icon'}
-              />
+                  width={32}
+                  height={32}
+                  className={styles['add-icon-image']}
+                  src="/img/Add-icon.png"
+                  alt={'add-icon'}
+                />
               </div>
             </div>
             <div className={styles['card-content']}>
@@ -284,14 +284,14 @@ export default function MainPage() {
                 src="/img/Bodyflex.png"
                 alt={'bodyflex'}
               />
-              <div className={styles['add-icon']}>
+              <div className={styles['add-icon-wrapper']}>
                 <Image 
-                width={32}
-                height={32}
-                className={styles['add-icon']}
-                src="/img/Add-icon.png"
-                alt={'add-icon'}
-              />
+                  width={32}
+                  height={32}
+                  className={styles['add-icon-image']}
+                  src="/img/Add-icon.png"
+                  alt={'add-icon'}
+                />
               </div>
             </div>
             <div className={styles['card-content']}>

@@ -1,0 +1,123 @@
+.notFound {
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #ffffff 0%, #e7dede 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.container {
+  text-align: center;
+  z-index: 1;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.title {
+  font-size: 180px;
+  font-weight: 700;
+  color: #BCEC30;
+  margin: 0;
+  line-height: 1;
+  text-shadow: 0 0 30px rgba(121, 91, 154, 0.3);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.subtitle {
+  font-size: 32px;
+  font-weight: 500;
+  color: #000000;
+  margin: 20px 0 16px 0;
+  letter-spacing: -0.5px;
+}
+
+.description {
+  font-size: 18px;
+  color: #a0a0a0;
+  line-height: 1.6;
+  margin-bottom: 40px;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.homeLink {
+  display: inline-block;
+  padding: 14px 32px;
+  background: linear-gradient(135deg, #BCEC30 0%,  #BCEC30 100%);
+  color: #000000;
+  text-decoration: none;
+  border-radius: 40px;
+  font-size: 16px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(88, 14, 162, 0.3);
+}
+
+.homeLink:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(88, 14, 162, 0.4);
+  background: linear-gradient(135deg, #BCEC30 0%, #627c13 100%);
+}
+
+.homeLink:active {
+  transform: translateY(0);
+}
+
+/* Анимации */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    text-shadow: 0 0 30px rgba(182, 114, 255, 0.3);
+  }
+  50% {
+    text-shadow: 0 0 50px rgba(182, 114, 255, 0.5);
+  }
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .title {
+    font-size: 120px;
+  }
+  
+  .subtitle {
+    font-size: 24px;
+  }
+  
+  .description {
+    font-size: 16px;
+    padding: 0 20px;
+  }
+  
+  .homeLink {
+    padding: 12px 28px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .title {
+    font-size: 80px;
+  }
+  
+  .subtitle {
+    font-size: 20px;
+  }
+  
+  .description {
+    font-size: 14px;
+  }
+}

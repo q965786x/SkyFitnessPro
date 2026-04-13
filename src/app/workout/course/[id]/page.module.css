@@ -1,0 +1,295 @@
+.main-container {
+    width: 1440px;
+    /*height: 1559px;*/
+    background: #ffffff;
+    margin: 0 auto;
+    overflow-y: hidden;
+}
+
+.page-content {
+    padding: 32px 140px 48px 140px;
+    min-height: 1559px;
+    display: flex;
+    flex-direction: column;
+}
+
+.header-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 60px;
+}
+
+.logo-area {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.logo {
+    background: linear-gradient(135deg, #1E3C72 0%, #2A5298 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+}
+
+.logo-subtitle {
+    font-size: 18px;
+    font-weight: 400;
+    color: #000000;  
+}
+
+.logout-btn {
+    width: 104px;
+    height: 52px;
+    background-color: #BCEC30;
+    border: 1.5px solid #BCEC30;
+    padding: 16px 24px;
+    border-radius: 46px;
+    font-size: 18px;
+    font-weight: 400;
+    cursor: pointer;
+}
+
+/* ===== основной блок курса (ширина 1160px) ===== */
+    .course-container {
+        width: 100%;
+        max-width: 1160px;
+        margin: 0 auto;
+    }
+
+/* контейнер фото с абсолютным позиционированием для названия */
+    .course-image-wrapper {
+        position: relative;
+        width: 100%;
+        height: 310px;
+        border-radius: 30px;
+        margin-bottom: 60px;           
+        overflow: hidden;
+    }
+
+    .course-image {
+        width: 100%;
+        height: auto;
+        display: block;
+        object-fit: cover;
+    }
+
+/* блок "Подойдет для вас, если:" */
+    .section-label {
+        font-size: 40px;
+        font-weight: 600;
+        color: #000000;
+        margin-bottom: 40px;
+        letter-spacing: -0.3px;
+    }
+
+/* три блока в ряд с градиентом #151720 → #1E212E */
+    .features-row {
+        display: flex;
+        gap: 28px;
+        margin-bottom: 64px;
+    }
+
+
+    .feature-card {
+        flex: 1;
+        background: linear-gradient(135deg, #151720 0%, #1E212E 100%);
+        border-radius: 32px;
+        padding: 32px 24px 32px 20px;
+        transition: transform 0.2s ease;
+        box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    .feature-card:hover {
+        transform: translateY(-4px);
+    }
+
+/* контейнер для цифры и текста */
+    .feature-content {
+        display: flex;
+        gap: 25px;
+        align-items: flex-start;
+    }
+
+    .feature-number {
+        font-size: 75px;
+        font-weight: 500;
+        line-height: 0.85;
+        color: #BCEC30;
+        letter-spacing: -4px;
+        flex-shrink: 0;
+        width: auto;
+        font-family: 'Inter', monospace;
+    }
+
+    .feature-text {
+        font-size: 24px;
+        line-height: 1.45;
+        color: #ffffff;
+        font-weight: 400;
+        padding-top: 8px;
+        letter-spacing: -0.2px;
+    }
+
+/* сплошной блок Направления — фон #BCEC30 */
+    .directions-heading {
+        font-size: 40px;
+        font-weight: 600;
+        color: #000000;
+        margin-bottom: 40px;
+        letter-spacing: -0.3px;
+    }
+
+    .directions-full-block {
+        width: 100%;
+        background-color: #BCEC30;
+        border-radius: 36px;
+        padding: 40px 48px;
+        margin-bottom: 64px;
+    }        
+
+/* сетка: по два в колонну, три ряда = 6 элементов */
+    .directions-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 34px 48px;
+    }
+
+    .direction-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 24px;
+        font-weight: 400;
+        color:#000000;
+        letter-spacing: -0.2px;
+    }
+
+/* четырехконечная звезда (★ но стилизована под четыре луча) */
+    .star-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 26px;
+        font-weight: 400;
+        color: #000000;
+        width: 26px;
+        text-align: center;
+    }
+
+    /* символ ✦ (четырехконечная звезда) */
+    .star-icon::before {
+        content: "✦";
+        font-size: 26px;
+        font-weight: 400;
+    }
+
+/* двойной блок: текст + фото */
+    .double-panel {
+        display: flex;
+        gap: 40px;
+        margin-bottom: 20px;
+        align-items: stretch;
+    }
+
+    .info-text-block {
+        flex: 1;
+        background: #ffffff;
+        padding: 40px 40px;
+        border: 1px solid #ffffff;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.02);
+    }
+
+    .info-text-block h4 {
+        font-size: 60px;
+        font-weight: 500;
+        color: #000000;
+        margin-bottom: 28px;
+    }
+
+    .benefits-list {
+        list-style: none;
+        margin-bottom: 42px;
+    }
+
+    .benefits-list li {
+        font-size: 24px;
+        font-weight: 400;
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #000000;
+        font-weight: 450;
+    }
+
+    .benefits-list li::before {
+        content: ".";            
+        color: #000000;            
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;            
+    }
+
+    .btn-primary {
+        width: 100%;
+        max-width: 437px;
+        height: 52px;
+        background-color: #BCEC30;
+        border: none;
+        border-radius: 46px;
+        font-size: 18px;
+        font-weight: 400;
+        font-family: inherit;
+        color: #000000;
+        cursor: pointer;
+        transition: 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-primary:hover {
+        background-color: #a9d62a;
+        transform: scale(0.98);
+    }
+
+    .right-image {
+    flex: 1;
+    min-width: 280px;
+    border-radius: 32px;
+    overflow: hidden;
+    background: #ffffff;
+    
+}
+
+.image-stack {
+    position: relative;
+    width: 100%;    
+    aspect-ratio: 437 / 406;
+    /* Сохраняем пропорции как на макете */
+}
+
+.image-lines,
+.image-sportsman {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.image-lines {
+    z-index: 1;
+    object-fit: cover;
+    transform: translateX(-250px); /* Смещает на 40px вправо */
+    
+}
+
+.image-sportsman {
+    z-index: 2;
+    object-fit: contain;
+}        
