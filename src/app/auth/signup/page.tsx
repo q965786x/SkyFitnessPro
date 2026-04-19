@@ -33,7 +33,7 @@ export default function SignUp() {
         <>            
             <div className={hasError ? styles.modal__blockWithError : styles.modal__block}>
                 <form className={styles.modal__form} onSubmit={handleSubmit}>
-                    <Link href="/main">
+                    <Link href="/workout/main">
                         <div className={styles.modal__logo}>
                             <Image 
                                 width={220}

@@ -1,5 +1,9 @@
+'use client';
+
+import Header from '@/src/components/Header/Header';
 import styles from './page.module.css';
 import Image from 'next/image';
+import { useParams, useRouter } from 'next/navigation';
 
 {/* const selectionTitles: Record<string, string> = {
     '1': 'Йога',
@@ -10,25 +14,19 @@ import Image from 'next/image';
 } */}
 
 export default function CoursePage() {
+    const params = useParams();
+    const router = useRouter();
+    const courseId = params.id; // реальный ID курса (1, 2, 3...)
+
+    const handleGoToLesson = () => {
+        router.push(`/workout/course/${courseId}/lesson/1`);
+    };
+    
     return (
         <div className={styles['main-container']} id="mainContainer">
             <div className={styles['page-content']}>
-                {/* Верхняя часть: логотип и кнопка "Выйти" */}
-                <div className={styles['header-nav']}>
-                    <div className={styles['logo-area']}>
-                        <div className={styles.logo}>
-                            <Image
-                                width={220}
-                                height={35}
-                                className={styles['logo__image']}
-                                src="/img/logo.png"
-                                alt={'logo'}
-                            />
-                        </div>
-                        <div className={styles['logo-subtitle']}>Онлайн-тренировки для занятий дома</div>
-                    </div>
-                    <button className={styles['logout-btn']} id="logoutBtn">Выйти</button>
-                </div>
+                {/* Используем компонент Header */}
+                <Header />
 
                 {/* Блок курса (1160px контент) */}
                 <div className={styles['course-container']}>
@@ -105,6 +103,7 @@ export default function CoursePage() {
                                     fill
                                     className={styles['image-lines']}
                                 />
+                                
                                 <Image
                                     src="/img/sportsman.png"
                                     alt="sportsman"

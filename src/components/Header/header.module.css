@@ -1,0 +1,156 @@
+.header-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 60px;
+}
+
+.logo-area {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.logo {
+    background: linear-gradient(135deg, #1E3C72 0%, #2A5298 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+}
+
+.logo-subtitle {
+    font-size: 18px;
+    font-weight: 400;
+    color: #000000;  
+}
+
+.login-btn {
+    width: 104px;
+    height: 52px;
+    background-color: #BCEC30;
+    border: 1.5px solid #BCEC30;
+    padding: 16px 24px;
+    border-radius: 46px;
+    font-size: 18px;
+    font-weight: 400;
+    cursor: pointer;
+}
+
+/* Авторизованный пользователь */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+}
+
+.user-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.user-avatar:hover {
+    opacity: 0.8;
+}
+
+.user-name {
+    font-size: 24px;
+    font-weight: 400;
+    color: #000000;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.user-name:hover {
+    opacity: 0.8;
+}
+
+.dropdown-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #000000;
+    transition: transform 0.2s;
+}
+
+.dropdown-btn.active {
+    transform: rotate(180deg);
+}
+
+/* Модальное окно */
+.modal {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: 0;
+    width: 266px;
+    background: #FFFFFF;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    padding: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.modal-user-name {
+    font-size: 18px;
+    font-weight: 400;
+    color: #000000;
+    text-align: center;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #EEEEEE;
+}
+
+.modal-user-email {
+    font-size: 18px;
+    font-weight: 400;
+    color: #666666;
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.modal-btn-profile {
+    width: 100%;
+    height: 52px;
+    background-color: #BCEC30;
+    border: none;
+    border-radius: 46px;
+    font-size: 18px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.modal-btn-profile:hover {
+    background-color: #a9d62a;
+}
+
+.modal-btn-logout {
+    width: 100%;
+    height: 52px;
+    background-color: #FFFFFF;
+    border: 1px solid #E0E0E0;
+    border-radius: 46px;
+    font-size: 18px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.modal-btn-logout:hover {
+    background-color: #F5F5F5;
+}
+
+.loading-placeholder {
+    width: 104px;
+    height: 52px;
+}

@@ -191,10 +191,12 @@
         gap: 40px;
         margin-bottom: 20px;
         align-items: stretch;
+        background: #ffffff;
+        border-radius: 32px;
     }
 
     .info-text-block {
-        flex: 1;
+        flex: 0 0 40%; /* 40% ширины */
         background: #ffffff;
         padding: 40px 40px;
         border: 1px solid #ffffff;
@@ -220,15 +222,14 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        color: #000000;
-        font-weight: 450;
+        color: #000000;        
     }
 
     .benefits-list li::before {
-        content: ".";            
-        color: #000000;            
-        width: 28px;
-        height: 28px;
+        content: "•";            
+        color: #000000; 
+        font-size: 32px;
+        font-weight: bold;           
         display: inline-flex;
         align-items: center;
         justify-content: center;            
@@ -252,41 +253,31 @@
         justify-content: center;
     }
 
-    .btn-primary:hover {
-        background-color: #a9d62a;
-        transform: scale(0.98);
-    }
+.btn-primary:hover {
+    background-color: #a9d62a;
+    transform: scale(0.98);
+}
 
-    .right-image {
-    flex: 1;
+.right-image {
+    flex: 0 0 60%; /* 60% ширины */
     min-width: 280px;
     border-radius: 32px;
     overflow: hidden;
     background: #ffffff;
-    
+    position: relative;
 }
 
 .image-stack {
     position: relative;
-    width: 100%;    
-    aspect-ratio: 437 / 406;
-    /* Сохраняем пропорции как на макете */
-}
-
-.image-lines,
-.image-sportsman {
-    position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
-    height: 100%;
+    height: 100%;    
 }
 
 .image-lines {
-    z-index: 1;
-    object-fit: cover;
-    transform: translateX(-250px); /* Смещает на 40px вправо */
-    
+    z-index: 1;     
+     
+    transform: translateY(0px);
+    transform: translateX(-200px); 
 }
 
 .image-sportsman {
