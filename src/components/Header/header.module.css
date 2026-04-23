@@ -28,12 +28,22 @@
     width: 104px;
     height: 52px;
     background-color: #BCEC30;
-    border: 1.5px solid #BCEC30;
+    border: none;
     padding: 16px 24px;
     border-radius: 46px;
     font-size: 18px;
     font-weight: 400;
     cursor: pointer;
+}
+
+.login-btn:hover {
+    background-color: #a9d62a;
+    transform: translateY(-1px);
+}
+
+.loading-placeholder {
+    width: 104px;
+    height: 42px;
 }
 
 /* Авторизованный пользователь */

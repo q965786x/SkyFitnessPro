@@ -135,8 +135,7 @@
     cursor: pointer;
     transition: transform 0.2s ease;
     width: 32px;
-    height: 32px;
-    background: rgba(255, 255, 255, 0.9);
+    height: 32px;    
     border-radius: 50%;
     display: flex;
     align-items: center;

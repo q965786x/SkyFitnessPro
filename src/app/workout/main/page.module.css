@@ -8,7 +8,7 @@
 
 .page-content {
     padding: 32px 140px 48px 140px;
-    min-height: 1559px;
+    max-height: 1559px;
     display: flex;
     flex-direction: column;
 }
@@ -39,7 +39,7 @@
     color: #000000;  
 }
 
-.logout-btn {
+.login-btn {
     width: 104px;
     height: 52px;
     background-color: #BCEC30;
@@ -49,6 +49,11 @@
     font-size: 18px;
     font-weight: 400;
     cursor: pointer;
+}
+
+.login-btn:hover {
+    background-color: #a9d62a;
+    transform: translateY(-1px);
 }
 
 .title-section {
@@ -76,7 +81,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 40px;
-    margin-bottom: 34px;
+    
 }
 
 .card {
@@ -112,10 +117,27 @@
     transition: transform 0.2s ease;
     width: 32px;
     height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .add-icon-wrapper:hover {
     transform: scale(1.05);
+}
+
+.add-icon-wrapper:hover:not(.disabled) {
+    transform: scale(1.05);
+}
+
+.add-icon-wrapper.disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
+.add-icon-wrapper.disabled:hover {
+    transform: none;
 }
 
 .add-icon-image {
@@ -186,6 +208,32 @@
     padding: 20px 0;
 }
 
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-size: 18px;
+  color: #666666;
+}
+
+.logout-btn {
+    width: 104px;
+    height: 52px;
+    background-color: #BCEC30;
+    border: 1.5px solid #BCEC30;
+    padding: 16px 24px;
+    border-radius: 46px;
+    font-size: 18px;
+    font-weight: 400;
+    cursor: pointer;
+}
+
+.logout-btn:hover {
+    background-color: #a9d62a;
+    transform: translateY(-1px);
+}
+
 .scroll-to-top {
     width: 127px;
     height: 52px;
@@ -199,6 +247,16 @@
     gap: 12px;
     cursor: pointer;
     border: none;
+    transition: all 0.2s ease;
+}
+
+.scroll-to-top:hover {
+    background-color: #a9d62a;
+    transform: translateY(-2px);
+}
+
+.scroll-to-top:active {
+    transform: translateY(0);
 }
 
 .arrow-up {

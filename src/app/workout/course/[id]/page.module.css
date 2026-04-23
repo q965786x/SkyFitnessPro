@@ -1,6 +1,5 @@
 .main-container {
     width: 1440px;
-    /*height: 1559px;*/
     background: #ffffff;
     margin: 0 auto;
     overflow-y: hidden;
@@ -87,15 +86,15 @@
 /* три блока в ряд с градиентом #151720 → #1E212E */
     .features-row {
         display: flex;
-        gap: 28px;
-        margin-bottom: 64px;
+        gap: 18px;
+        margin-bottom: 60px;
     }
 
 
     .feature-card {
         flex: 1;
         background: linear-gradient(135deg, #151720 0%, #1E212E 100%);
-        border-radius: 32px;
+        border-radius: 28px;
         padding: 32px 24px 32px 20px;
         transition: transform 0.2s ease;
         box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.25);
@@ -119,8 +118,7 @@
         color: #BCEC30;
         letter-spacing: -4px;
         flex-shrink: 0;
-        width: auto;
-        font-family: 'Inter', monospace;
+        width: auto;        
     }
 
     .feature-text {
@@ -132,155 +130,322 @@
         letter-spacing: -0.2px;
     }
 
-/* сплошной блок Направления — фон #BCEC30 */
+/* ===== Направления ===== */
+.directions-wrapper {
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+@media (min-width: 1024px) {
+    .directions-wrapper {
+        padding: 0;
+    }
+}
+
+.directions-heading {
+    font-size: 40px;
+    font-weight: 600;
+    color: #000000;
+    margin-bottom: 24px;
+}
+
+@media (min-width: 768px) {
     .directions-heading {
         font-size: 40px;
-        font-weight: 600;
-        color: #000000;
         margin-bottom: 40px;
-        letter-spacing: -0.3px;
     }
+}
 
+.directions-full-block {
+    width: 100%;
+    background-color: #BCEC30;
+    border-radius: 28px;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+@media (min-width: 768px) {
     .directions-full-block {
-        width: 100%;
-        background-color: #BCEC30;
-        border-radius: 36px;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 30px 80px;
         padding: 40px 48px;
-        margin-bottom: 64px;
-    }        
-
-/* сетка: по два в колонну, три ряда = 6 элементов */
-    .directions-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 34px 48px;
     }
+}
 
+.direction-item {
+    width: auto;
+    color: #000000;
+    font-size: 24px;
+    font-weight: 400;
+    white-space: nowrap;
+}
+
+@media (min-width: 768px) {
     .direction-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
+        width: calc(33.33% - 54px);
+        min-width: 200px;
         font-size: 24px;
-        font-weight: 400;
-        color:#000000;
-        letter-spacing: -0.2px;
     }
-
-/* четырехконечная звезда (★ но стилизована под четыре луча) */
-    .star-icon {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 26px;
-        font-weight: 400;
-        color: #000000;
-        width: 26px;
-        text-align: center;
-    }
-
-    /* символ ✦ (четырехконечная звезда) */
-    .star-icon::before {
-        content: "✦";
-        font-size: 26px;
-        font-weight: 400;
-    }
-
-/* двойной блок: текст + фото */
-    .double-panel {
-        display: flex;
-        gap: 40px;
-        margin-bottom: 20px;
-        align-items: stretch;
-        background: #ffffff;
-        border-radius: 32px;
-    }
-
-    .info-text-block {
-        flex: 0 0 40%; /* 40% ширины */
-        background: #ffffff;
-        padding: 40px 40px;
-        border: 1px solid #ffffff;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.02);
-    }
-
-    .info-text-block h4 {
-        font-size: 60px;
-        font-weight: 500;
-        color: #000000;
-        margin-bottom: 28px;
-    }
-
-    .benefits-list {
-        list-style: none;
-        margin-bottom: 42px;
-    }
-
-    .benefits-list li {
-        font-size: 24px;
-        font-weight: 400;
-        margin-bottom: 18px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        color: #000000;        
-    }
-
-    .benefits-list li::before {
-        content: "•";            
-        color: #000000; 
-        font-size: 32px;
-        font-weight: bold;           
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;            
-    }
-
-    .btn-primary {
-        width: 100%;
-        max-width: 437px;
-        height: 52px;
-        background-color: #BCEC30;
-        border: none;
-        border-radius: 46px;
-        font-size: 18px;
-        font-weight: 400;
-        font-family: inherit;
-        color: #000000;
-        cursor: pointer;
-        transition: 0.2s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-.btn-primary:hover {
-    background-color: #a9d62a;
-    transform: scale(0.98);
 }
 
-.right-image {
-    flex: 0 0 60%; /* 60% ширины */
-    min-width: 280px;
-    border-radius: 32px;
-    overflow: hidden;
-    background: #ffffff;
+@media (min-width: 1024px) {
+    .direction-item {
+        width: 284px;
+    }
+}
+
+/* ===== Двойной блок (Начните путь) ===== */
+.journey-wrapper {
     position: relative;
+    margin-top: -100px;
+    margin-bottom: 32px;
+    width: 100%;
 }
 
-.image-stack {
+@media (min-width: 1024px) {
+    .journey-wrapper {
+        margin-top: 104px;
+        margin-bottom: 48px;
+    }
+}
+
+/* Мобильное изображение */
+.mobile-image {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+    .mobile-image {
+        display: none;
+    }
+}
+
+.mobile-image-placeholder {
     position: relative;
     width: 100%;
-    height: 100%;    
+    height: 336px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.image-lines {
-    z-index: 1;     
-     
-    transform: translateY(0px);
-    transform: translateX(-200px); 
+@media (min-width: 640px) {
+    .mobile-image-placeholder {
+        height: 450px;
+    }
 }
 
-.image-sportsman {
-    z-index: 2;
+@media (min-width: 768px) {
+    .mobile-image-placeholder {
+        height: 500px;
+    }
+}
+
+.mobile-image-img {
+    object-fit: cover;
+}
+
+/* Белый блок с тенью */
+.journey-card {
+    position: relative;
+    margin-top: -160px;
+    margin-left: 16px;
+    margin-right: 16px;
+    z-index: 10;
+    border-radius: 30px;
+    padding: 30px;
+    background-color: #ffffff;
+    box-shadow: 0px 4px 67px -12px rgba(0, 0, 0, 0.13);
+    overflow: hidden;
+}
+
+@media (min-width: 640px) {
+    .journey-card {
+        margin-top: -192px;
+        margin-left: 32px;
+        margin-right: 32px;
+        padding: 32px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .journey-card {
+        max-width: 1160px;
+        margin: 0 auto;
+        margin-top: 0;
+        min-height: 486px;
+        padding: 40px;
+        overflow: visible;
+    }
+}
+
+.journey-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+@media (min-width: 640px) {
+    .journey-content {
+        max-width: 500px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .journey-content {
+        width: 437px;
+        gap: 28px;
+    }
+}
+
+.journey-title {
+    color: #000000;
+    font-size: 60px;
+    font-weight: 500;
+    line-height: 100%;
+}
+
+@media (min-width: 640px) {
+    .journey-title {
+        font-size: 44px;
+        line-height: 52px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .journey-title {
+        font-size: 60px;
+        line-height: 70px;
+    }
+}
+
+.journey-list {
+    list-style: disc;
+    list-style-position: outside;
+    padding-left: 30px;
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 24px;
+    font-weight: 400;
+    line-height: 1.4;
+}
+
+@media (min-width: 640px) {
+    .journey-list {
+        font-size: 20px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .journey-list {
+        font-size: 24px;
+        line-height: 28px;
+    }
+}
+
+.journey-list li {
+    padding-bottom: 4px;
+}
+
+.journey-button {
+    width: 437px;
+    height: 52px;
+    border-radius: 46px;
+    background-color: #BCEC30;
+    border: none;
+    color: #000000;
+    font-size: 18px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+@media (min-width: 640px) {
+    .journey-button {
+        width: 380px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .journey-button {
+        width: 437px;
+        height: 52px;
+        font-size: 18px;
+    }
+}
+
+.journey-button:hover {
+    background-color: #C6FF00;
+    transform: translateY(-1px);
+}
+
+.journey-button:active {
+    transform: translateY(0);
+}
+
+.journey-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Десктоп изображение */
+.desktop-image {
+    display: none;
+}
+
+@media (min-width: 1024px) {
+    .desktop-image {
+        display: block;
+        position: absolute;
+        right: 50px;
+        top: -50px;
+        width: 487px;
+        height: 542px;
+        z-index: 20;
+        pointer-events: none;
+    }
+}
+
+.desktop-image-img {
     object-fit: contain;
-}        
+}
+
+/* Адаптивность для остальных блоков */
+@media (max-width: 768px) {
+    .page-content {
+        padding: 32px 20px 48px 20px;
+    }
+    
+    .features-row {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .feature-number {
+        font-size: 50px;
+    }
+    
+    .feature-text {
+        font-size: 18px;
+    }
+    
+    .section-label {
+        font-size: 28px;
+        margin-bottom: 24px;
+    }
+}
+
+@media (max-width: 1024px) and (min-width: 769px) {
+    .features-row {
+        gap: 20px;
+    }
+    
+    .feature-text {
+        font-size: 20px;
+    }
+}

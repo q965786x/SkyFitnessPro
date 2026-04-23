@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
 import styles from './header.module.css';
 import Image from 'next/image';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { storage } from '@/services/storage';
+import { getMe } from '@/services/api';
 
 type UserProps = {
     name: string;
@@ -25,21 +27,27 @@ export default function Header() {
     const isLessonPage = pathname?.includes('/lesson/');
     const hideSubtitle = isProfilePage || isLessonPage;
 
-    // Проверка авторизации при загрузке
     useEffect(() => {
-        // Здесь должна быть реальная проверка авторизации
-        // Например, из localStorage или API
-        const checkAuth = () => {
-            const storedUser = localStorage.getItem('user');
-            if (storedUser) {
-                setUser(JSON.parse(storedUser));
-            } else {
-                // Для демонстрации - раскомментировать для тестирования
-                // setUser({ name: 'Сергей', email: 'sergey.petrov86@mail.ru' });
+        const checkAuth = async () => {
+            const token = storage.getToken();
+            if (token) {
+                try {
+                    const response = await getMe(); // Получаем axios response
+                    const userData = response.data; // Берем .data
+                    setUser({
+                        name: userData.email.split('@')[0],
+                        email: userData.email,
+                    });
+                } catch (error) {
+                    // Токен невалидный
+                    console.error('Ошибка авторизации:', error);
+                    storage.clearAll();
+                    setUser(null);
+                }
             }
             setIsLoading(false);
         };
-        
+            
         checkAuth();
     }, []);
 
@@ -62,17 +70,25 @@ export default function Header() {
     }, [isModalOpen]);
 
     const handleLogout = () => {
-        localStorage.removeItem('user');
+        storage.clearAll(); // Очищаем всё: токен, пользователя, курсы
         setUser(null);
         setIsModalOpen(false);
-        // Перенаправление на главную или страницу входа
-        router.push('/signin');
+        router.push('/workout/main'); // Перенаправляем на главную страницу
     };
 
     const handleProfile = () => {
         setIsModalOpen(false);
         // Переход на страницу профиля
         router.push('/profile');
+    };
+
+    const handleLogin = () => {
+        // Сохраняем текущий курс для добавления после авторизации (если на странице курса)
+        const pathParts = pathname?.split('/');
+        if (pathParts && pathParts[1] === 'workout' && pathParts[2] === 'course' && pathParts[3]) {
+            localStorage.setItem('pendingCourseId', pathParts[3]);
+        }
+        router.push('/workout/main');
     };
 
     // Показываем загрузку, если проверяем авторизацию
@@ -116,7 +132,17 @@ export default function Header() {
                         <div className={styles['logo-subtitle']}>Онлайн-тренировки для занятий дома</div>
                     )}
                 </div>
-                <button className={styles['login-btn']} onClick={() => window.location.href = '/login'}>
+                <button 
+                    className={styles['login-btn']} 
+                    onClick={() => {
+                        // Сохраняем текущий курс для добавления после авторизации (если на странице курса)
+                        const pathParts = pathname?.split('/');
+                        if (pathParts && pathParts[1] === 'workout' && pathParts[2] === 'course' && pathParts[3]) {
+                            localStorage.setItem('pendingCourseId', pathParts[3]);
+                        }
+                        router.push('/workout/main');
+                    }}
+                >
                     Войти
                 </button>
             </div>

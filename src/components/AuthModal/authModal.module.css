@@ -1,0 +1,176 @@
+.modal__block {
+    width: 360px;
+    padding: 43px 0px 47px 0px;
+}
+
+.modal__blockWithError {
+    width: 360px;
+    padding: 43px 0px 47px 0px;
+}
+
+.modal__form {
+    width: 100%;
+    background-color: #ffffff;
+    border-radius: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.modal__logo {
+    width: 220px;
+    height: 35px;
+    margin-bottom: 48px;
+    background-color: transparent;
+}
+
+.modal__input {
+    width: 280px;
+    height: 52px;
+    border: 1px solid #D0CECE;   
+    margin-bottom: 10px;  
+    border-radius: 12px;
+    padding: 0 16px;
+    font-size: 18px;
+    outline: none;
+    transition: border-color 0.2s;  
+}
+
+.modal__input:focus {
+    border-color: #BCEC30;
+}
+
+.modal__input::placeholder {
+    font-style: normal;
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 20px;
+    letter-spacing: -0.05px;
+    color: #d0cece;    
+}
+
+.login {
+    margin-bottom: 30px;
+}
+
+.modal__btnEnter {
+    width: 280px;
+    height: 52px;
+    background-color: #BCEC30;
+    border-radius: 46px;
+    margin-top: 34px;
+    margin-bottom: 10px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 400;    
+    line-height: 20px;
+    letter-spacing: -0.05px;
+    color: #000000;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.modal__btnEnter:hover {
+    background-color: #C6FF00;
+    transform: translateY(-1px);
+}
+
+.modal__btnEnter:active {
+    background-color: #000000;
+    transform: translateY(0);
+    color: #ffffff;
+}
+
+.modal__btnEnter:disabled {
+    background-color: #F7F7F7;
+    cursor: not-allowed;
+    transform: none;
+    opacity: 0.6;
+    color: #999999;
+}
+
+.modal__btnSignup {
+    width: 280px;
+    height: 52px;
+    background-color: #ffffff;
+    border-radius: 46px;
+    border: 1px solid #000000; 
+    display: flex;
+    align-items: center;
+    justify-content: center;   
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 20px;
+    letter-spacing: -0.05px;
+    color: #000000;    
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.modal__btnSignup:hover {
+    background-color: #F7F7F7;
+    transform: translateY(-1px);
+}
+
+.modal__btnSignup:active {
+    background-color: #E9ECED;
+    transform: translateY(0);
+}
+
+.modal__btnSignup:disabled {
+    background-color: #f5f5f5;
+    border-color: #999999;
+    color: #999999;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.modal__btnSignupEnt {
+    width: 280px;
+    height: 52px;
+    background-color: #BCEC30;
+    border-radius: 46px;
+    margin-top: 34px;
+    margin-bottom: 10px;
+    border: none;    
+    display: flex;
+    align-items: center;
+    justify-content: center;    
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 20px;
+    letter-spacing: -0.05px;
+    color: #000000;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.modal__btnSignupEnt:hover {
+    background-color: #C6FF00;
+    transform: translateY(-1px);
+}
+
+.modal__btnSignupEnt:active {
+    background-color: #000000;
+    transform: translateY(0);
+    color: #ffffff;
+}
+
+.modal__btnSignupEnt:disabled {
+    background-color: #F7F7F7;
+    cursor: not-allowed;
+    transform: none;
+    opacity: 0.6;
+    color: #999999;
+}
+
+.errorContainer {
+    width: 280px;
+    text-align: center;
+    font-size: 12px;
+    color: red;
+    margin-bottom: 10px;
+}
