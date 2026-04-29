@@ -13,6 +13,7 @@ import {
 } from '@/services/courses/coursesApi';
 import { logoutUser } from '@/services/auth/authApi';
 import CourseImage from '@/components/CourseImage/CourseImage';
+import { sortCoursesByOrder } from '@/utils/courseSort';
 
 type Course = {
   _id: string;
@@ -56,7 +57,8 @@ export default function MainPage() {
       console.log('Loaded courses:', coursesData);
       
       if (Array.isArray(coursesData) && coursesData.length > 0) {
-        setCourses(coursesData);
+        const sortedCourses = sortCoursesByOrder(coursesData);
+        setCourses(sortedCourses);
       } else {
         console.warn('Нет данных о курсах или пустой массив');
         setCourses([]);

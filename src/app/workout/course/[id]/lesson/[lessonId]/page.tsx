@@ -110,6 +110,16 @@ export default function LessonPage() {
             const allCompleted = progressData.every(count => count > 0);
             setWorkoutCompleted(allCompleted);
             
+            // ОБНОВЛЯЕМ КЭШ ПРОГРЕССА В STORAGE
+            // Сохраняем информацию о том, что тренировка обновлена
+            const updatedWorkouts = JSON.parse(localStorage.getItem('updatedWorkouts') || '{}');
+            updatedWorkouts[`${courseId}_${workoutId}`] = {
+                progressData,
+                workoutCompleted: allCompleted,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('updatedWorkouts', JSON.stringify(updatedWorkouts));
+            
             setIsModalOpen(false);
             dismiss(loadingToast);
             showSuccess('Прогресс успешно сохранен!');
@@ -130,6 +140,17 @@ export default function LessonPage() {
             return () => clearTimeout(timer);
         }
     }, [isSuccessModalOpen]);
+
+    useEffect(() => {
+        return () => {
+            // При уходе со страницы проверяем, нужно ли обновить профиль
+            const returnToProfile = localStorage.getItem('returnToProfile');
+            if (returnToProfile === 'true') {
+                // Флаг уже установлен, ничего не делаем
+                console.log('Будет обновлен профиль при возврате');
+            }
+        };
+    }, []);
 
     // Функция для вычисления процента выполнения упражнения
     const getProgressPercent = (current: number, max: number): number => {
