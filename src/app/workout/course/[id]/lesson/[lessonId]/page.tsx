@@ -4,8 +4,14 @@ import Header from '@/components/Header/Header';
 import styles from './page.module.css';
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { getWorkout, getCourse, getWorkoutProgress, saveWorkoutProgress } from '@/services/api';
-import { storage } from '@/services/storage'; 
+import { storage } from '@/services/storage';
+import { 
+    getCourseById, 
+    getWorkoutById, 
+    getWorkoutProgress, 
+    saveWorkoutProgress 
+} from '@/services/courses/coursesApi'; 
+import { useToast } from '@/hooks/useToast';
 
 type Exercise = {
     _id: string;
@@ -21,6 +27,7 @@ type WorkoutData = {
 };
 
 export default function LessonPage() {
+    const { showSuccess, showError, showLoading, dismiss } = useToast();
     const params = useParams();
     const router = useRouter();
     const courseId = params.id as string;
@@ -39,39 +46,49 @@ export default function LessonPage() {
         try {
             const token = storage.getToken();
             if (!token) {
-            router.push('/auth/signin');
+            router.push('/workout/main');
             return;
             }
             
-            // Загружаем данные тренировки
-            const workoutResponse = await getWorkout(workoutId);
-            const workoutData = workoutResponse.data;
+            // Загружаем данные тренировки - теперь getWorkoutById возвращает данные напрямую
+            const workoutData = await getWorkoutById(workoutId);
+            if (!workoutData) {
+                console.error('Тренировка не найдена');
+                setIsLoading(false);
+                return;
+            }
             setWorkout(workoutData);
 
-            // Загружаем прогресс по тренировке
-                try {
-                    const progressResponse = await getWorkoutProgress(courseId, workoutId);
-                    const progress = progressResponse.data;
+            // Загружаем прогресс по тренировке - теперь getWorkoutProgress возвращает данные напрямую
+            try {
+                const progress = await getWorkoutProgress(courseId, workoutId);
+                if (progress) {
                     setProgressData(progress.progressData || new Array(workoutData.exercises.length).fill(0));
                     setWorkoutCompleted(progress.workoutCompleted);
-                } catch (error) {
-                    // Если прогресса нет — создаем массив из нулей
-                    console.log('Прогресс не найден, создаем новый:', error);
+                } else {
                     setProgressData(new Array(workoutData.exercises.length).fill(0));
+                    setWorkoutCompleted(false);
                 }
+            } catch (error) {
+                // Если прогресса нет — создаем массив из нулей
+                console.log('Прогресс не найден, создаем новый:', error);
+                setProgressData(new Array(workoutData.exercises.length).fill(0));
+                setWorkoutCompleted(false);
+            }
 
-            // Загружаем название курса
-            const courseResponse = await getCourse(courseId);
-            const courseData = courseResponse.data;
-            setCourseTitle(courseData.nameRU);
+            // Загружаем название курса - теперь getCourseById возвращает данные напрямую
+            const courseData = await getCourseById(courseId);
+            if (courseData) {
+                setCourseTitle(courseData.nameRU);
+            }
             
-        } catch (error) {
-            console.error('Ошибка загрузки:', error);
-        } finally {
-            setIsLoading(false);
-        }
+            } catch (error) {
+                console.error('Ошибка загрузки:', error);
+            } finally {
+                setIsLoading(false);
+            }
         };
-        
+
         loadData();
     }, [courseId, workoutId, router]);
 
@@ -83,25 +100,41 @@ export default function LessonPage() {
 
     const handleSaveProgress = async () => {
         if (!workout) return;
+
+        const loadingToast = showLoading('Сохранение прогресса...');
         
         try {
-        await saveWorkoutProgress(courseId, workoutId, progressData);
-        
-        // Проверяем, завершена ли тренировка (все упражнения > 0)
-        const allCompleted = progressData.every(count => count > 0);
-        setWorkoutCompleted(allCompleted);
-        
-        setIsModalOpen(false);
-        setIsSuccessModalOpen(true);
-        
-        // Автоматически закрываем окно успеха через 2 секунды
-        setTimeout(() => {
-            setIsSuccessModalOpen(false);
-        }, 2000);
+            await saveWorkoutProgress(courseId, workoutId, progressData);
+            
+            // Проверяем, завершена ли тренировка (все упражнения > 0)
+            const allCompleted = progressData.every(count => count > 0);
+            setWorkoutCompleted(allCompleted);
+            
+            setIsModalOpen(false);
+            dismiss(loadingToast);
+            showSuccess('Прогресс успешно сохранен!');
+            setIsSuccessModalOpen(true);            
         } catch (error) {
-        console.error('Ошибка сохранения:', error);
-        alert('Не удалось сохранить прогресс');
+            dismiss(loadingToast);
+            console.error('Ошибка сохранения прогресса:', error);
+            showError('Не удалось сохранить прогресс');
         }
+    };
+
+    useEffect(() => {
+        if (isSuccessModalOpen) {
+            const timer = setTimeout(() => {
+            setIsSuccessModalOpen(false);
+            }, 2000);
+            
+            return () => clearTimeout(timer);
+        }
+    }, [isSuccessModalOpen]);
+
+    // Функция для вычисления процента выполнения упражнения
+    const getProgressPercent = (current: number, max: number): number => {
+        if (max === 0) return 0;
+        return Math.round((current / max) * 100);
     };
 
     if (isLoading) {
@@ -157,21 +190,42 @@ export default function LessonPage() {
             <div className={styles['exercises-section']}>
                 <h2 className={styles['exercises-title']}>{workout.name}</h2>
             
+                {/* Список упражнений с progress bar */}
                 <div className={styles['exercises-grid']}>
-                    {workout.exercises.map((exercise, index) => (
-                    <div 
-                        key={exercise._id} 
-                        className={`${styles['exercise-card']} ${progressData[index] > 0 ? styles['completed'] : ''}`}
-                    >
-                        <span className={styles['exercise-name']}>
-                        {exercise.name} ({exercise.quantity} повторений)
-                        </span>
-                        <span className={styles['exercise-progress']}>
-                        {progressData[index] || 0} / {exercise.quantity}
-                        </span>
+                    <div className={styles['exercises-list']}>
+                        {workout.exercises.map((exercise, index) => {
+                            const currentProgress = progressData[index] || 0;
+                            const percent = getProgressPercent(currentProgress, exercise.quantity);
+                            return (
+                                <div key={exercise._id} className={styles['exercise-item']}>
+                                    <div className={styles['exercise-header']}>
+                                        <span className={styles['exercise-name']}>
+                                            {exercise.name}
+                                        </span>
+                                        <span className={styles['exercise-percent']}>
+                                            {percent}%
+                                        </span>
+                                    </div>
+                                    <div className={styles['progress-bar-container']}>
+                                        <div 
+                                            className={styles['progress-bar-fill-exercise']}
+                                            style={{ width: `${percent}%` }}
+                                        />
+                                    </div>
+                                    <div className={styles['exercise-stats']}>
+                                        <span className={styles['exercise-current']}>
+                                            {currentProgress}
+                                        </span>
+                                        <span className={styles['exercise-max']}>
+                                            / {exercise.quantity} повторений
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
-                    ))}
                 </div>
+                
 
                 <button 
                     className={styles['fill-progress-button']}

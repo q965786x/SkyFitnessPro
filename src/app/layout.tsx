@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Roboto } from 'next/font/google';
 import './globals.css';
+import { AuthProvider } from '@/contexts/AuthContext';
+import ToastProvider from '@/components/ToastProvider/ToastProvider';
 
 const roboto = Roboto({
   variable: '--font-roboto',
@@ -8,8 +10,8 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
-  title: 'Create Next App',
-  description: 'Онлайн-тренировки для занятий дома',
+  title: 'SkyFitnessPro - Онлайн-тренировки для занятий дома',
+  description: 'Онлайн-тренировки для занятий дома. Достигайте своих фитнес-целей с профессиональными программами.',
 };
 
 export default function RootLayout({
@@ -20,7 +22,10 @@ export default function RootLayout({
   return (
     <html lang="en">     
       <body className={`${roboto.variable}`}>
-        {children}
+        <AuthProvider>
+          {children}
+          <ToastProvider />
+        </AuthProvider>
       </body>
     </html>
   );

@@ -1,9 +1,9 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect } from 'react';
-import { storage, type User } from '@/services/storage';
+import { storage, User } from '@/services/storage';
 
-interface AuthContextType {
+type AuthContextType = {
   user: User | null;
   isAuthorized: boolean;
   login: (userData: User) => void;
@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
-    storage.removeUser();
+    storage.clearAll();
     setUser(null);
     setIsAuthorized(false);
   };

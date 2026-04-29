@@ -2,12 +2,16 @@
 
 import styles from './page.module.css';
 import Image from 'next/image';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getAllCourses, getUserCourses } from '@/services/api';
 import { storage } from '@/services/storage';
 import SigninModal from '@/components/AuthModal/SigninModal';
 import SignupModal from '@/components/AuthModal/SignupModal';
+import { 
+  getAllCourses, 
+  getUserCourses 
+} from '@/services/courses/coursesApi';
+import { logoutUser } from '@/services/auth/authApi';
 
 type Course = {
   _id: string;
@@ -36,7 +40,6 @@ const getImagePath = (nameEN: string): string => {
 
 export default function MainPage() {
   const router = useRouter();
-  const pageRef = useRef<HTMLDivElement>(null);
   const [courses, setCourses] = useState<Course[]>([]);
   const [userCoursesIds, setUserCoursesIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,18 +57,25 @@ export default function MainPage() {
 
       if (isAuth) {
         const userCourses = await getUserCourses();
-        setUserCoursesIds(userCourses);
-        storage.setUserCoursesIds(userCourses);
+        setUserCoursesIds(userCourses);        
       } else {
         setUserCoursesIds([]);
       }
       
-      // Загружаем все курсы
-      const coursesResponse = await getAllCourses();
-      setCourses(coursesResponse.data);
+      // Загружаем все курсы - теперь getAllCourses возвращает массив курсов напрямую
+      const coursesData = await getAllCourses();
+      console.log('Loaded courses:', coursesData);
+      
+      if (Array.isArray(coursesData) && coursesData.length > 0) {
+        setCourses(coursesData);
+      } else {
+        console.warn('Нет данных о курсах или пустой массив');
+        setCourses([]);
+      }
       
     } catch (error) {
       console.error('Ошибка загрузки:', error);
+      setCourses([]);
     } finally {
       setIsLoading(false);
     }
@@ -86,7 +96,7 @@ export default function MainPage() {
 
   // Функция handleLogout
   const handleLogout = () => {
-    storage.clearAll(); // Очищаем все данные
+    logoutUser();
     setIsAuthorized(false);
     setUserCoursesIds([]);
     router.refresh();
@@ -112,25 +122,19 @@ export default function MainPage() {
     if (token) {
       const userCourses = await getUserCourses();
       setUserCoursesIds(userCourses);
-      storage.setUserCoursesIds(userCourses);
     }
+    setIsSigninModalOpen(false);
     router.refresh();
   };
-
+  
   if (isLoading) {
     return <div className={styles.loading}>Загрузка...</div>;
   }
-
+    
   return (
     <>
-      <div 
-        className={styles['main-container']} 
-        id="mainContainer"
-        ref={pageRef}
-      >
-        <div className={styles['page-content']}>
-
-          {/* Верхняя часть: логотип и кнопка "Выйти" */}
+      <div className={styles['main-container']}>
+        <div className={styles['page-content']}>          
           <div className={styles['header-nav']}>
             <div className={styles['logo-area']}>
               <div className={styles.logo}>
@@ -140,17 +144,17 @@ export default function MainPage() {
                   className={styles['logo__image']}
                   src="/img/logo.png"
                   alt={'logo'}
+                  loading="eager"
+                  priority
                 />
               </div>
-              <div 
-                className={styles['logo-subtitle']}
-              >
+              <div className={styles['logo-subtitle']}>
                 Онлайн-тренировки для занятий дома
               </div>
             </div>
             {isAuthorized ? (
               <button 
-                className={styles['logout-btn']}                 
+                className={styles['logout-btn']} 
                 onClick={handleLogout}
               >
                 Выйти
@@ -164,8 +168,7 @@ export default function MainPage() {
               </button>
             )}
           </div>
-
-          {/* Блок с h1 и полем справа */}
+          
           <div className={styles['title-section']}>
             <h1 className={styles['main-title']}>Начните заниматься спортом и улучшите качество жизни</h1>
             <div className={styles['info-badge']}>
@@ -175,89 +178,96 @@ export default function MainPage() {
                   className={styles['info-badge__image']}
                   src="/img/badge.png"
                   alt={'badge'}
+                  loading="eager"
                 />
             </div>
           </div>
 
-          {/* Сетка карточек */}
+          
           <div className={styles['cards']}>
-            {courses.map((course) => {
-              const added = isAuthorized && isCourseAdded(course._id);
-              return (
-                <div 
-                  key={course._id} 
-                  className={styles.card}
-                  onClick={() => handleCardClick(course._id)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className={styles['card-image-wrapper']}>
-                    <Image 
-                      width={360}
-                      height={325}
-                      className={styles['card-image']}
-                      src={getImagePath(course.nameEN)}
-                      alt={course.nameRU}
-                    />
-                    {/* Кнопка добавления курса показывается всем */}
-                    <div 
-                      className={`${styles['add-icon-wrapper']} ${added ? styles['disabled'] : ''}`}
-                      onClick={(e) => handleIconClick(e, course._id)}
-                    >
-                      {added ? (
-                        // Иконка галочки для добавленных курсов
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M16.6667 5L7.5 14.1667L3.33333 10" stroke="#4CAF50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      ) : (
-                        // Иконка плюса для недобавленных курсов
-                        <Image 
-                          width={32}
-                          height={32}
-                          className={styles['add-icon-image']}
-                          src="/img/Add-icon.png"
-                          alt="add-icon"
-                        />
-                      )}
-                    </div>
-                  </div>            
-                  <div className={styles['card-content']}>
-                    <div className={styles['card-title']}>{course.nameRU}</div>
-                    <div className={styles['card-buttons-wrapper']}>
-                      <div className={styles['card-buttons-row']}>
-                        <button className={styles['btn-calendar']}>
+            {courses.length === 0 ? (
+              <div className={styles['no-courses']}>
+                <p>Нет доступных курсов</p>
+              </div>
+              ) : (courses.map((course) => {
+                const added = isAuthorized && isCourseAdded(course._id);
+                return (
+                  <div 
+                    key={course._id} 
+                    className={styles.card}
+                    onClick={() => handleCardClick(course._id)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className={styles['card-image-wrapper']}>
+                      <Image 
+                        width={360}
+                        height={325}
+                        className={styles['card-image']}
+                        src={getImagePath(course.nameEN)}
+                        alt={course.nameRU}
+                        loading="lazy"
+                      />
+                      
+                      <div 
+                        className={`${styles['add-icon-wrapper']} ${added ? styles['disabled'] : ''}`}
+                        onClick={(e) => handleIconClick(e, course._id)}
+                      >
+                        {added ? (
+                          // Иконка галочки для добавленных курсов
+                          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16.6667 5L7.5 14.1667L3.33333 10" stroke="#4CAF50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        ) : (
+                          // Иконка плюса для недобавленных курсов
+                          <Image 
+                            width={32}
+                            height={32}
+                            className={styles['add-icon-image']}
+                            src="/img/Add-icon.png"
+                            alt="add-icon"
+                          />
+                        )}
+                      </div>
+                    </div>            
+                    <div className={styles['card-content']}>
+                      <div className={styles['card-title']}>{course.nameRU}</div>
+                      <div className={styles['card-buttons-wrapper']}>
+                        <div className={styles['card-buttons-row']}>
+                          <button className={styles['btn-calendar']}>
+                            <Image 
+                              width={18} 
+                              height={18} 
+                              src="/img/calendar-icon.png" 
+                              alt="calendar" 
+                            />
+                            <span>{course.durationInDays || 25} дней</span>
+                          </button>
+                          <button className={styles['btn-time']}>
+                            <Image 
+                              width={18} 
+                              height={18} 
+                              src="/img/time-icon.png" 
+                              alt="time" 
+                            />
+                            <span>
+                              {course.dailyDurationInMinutes?.from || 20}-{course.dailyDurationInMinutes?.to || 50} мин/день
+                            </span>
+                          </button>
+                        </div>
+                        <button className={styles['btn-difficulty']}>
                           <Image 
                             width={18} 
                             height={18} 
-                            src="/img/calendar-icon.png" 
-                            alt="calendar" 
-                          />
-                          <span>{course.durationInDays || 25} дней</span>
-                        </button>
-                        <button className={styles['btn-time']}>
-                          <Image 
-                            width={18} 
-                            height={18} 
-                            src="/img/time-icon.png" 
-                            alt="time" 
-                          />
-                          <span>
-                            {course.dailyDurationInMinutes?.from || 20}-{course.dailyDurationInMinutes?.to || 50} мин/день
-                          </span>
+                            src="/img/diagram-icon.png" 
+                            alt="difficulty" />
+                          <span>Сложность: {course.difficulty || 'средний'}</span>
                         </button>
                       </div>
-                      <button className={styles['btn-difficulty']}>
-                        <Image 
-                          width={18} 
-                          height={18} 
-                          src="/img/diagram-icon.png" 
-                          alt="difficulty" />
-                        <span>Сложность: {course.difficulty || 'средний'}</span>
-                      </button>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
 
           {/* Кнопка "Вверх" */}

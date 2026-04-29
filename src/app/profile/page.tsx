@@ -3,10 +3,22 @@
 import Header from "@/components/Header/Header";
 import styles from './page.module.css';
 import Image from 'next/image';
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getMe, getAllCourses, getUserCourses, getCourseProgress, deleteCourseFromUser } from '@/services/api';
 import { storage } from '@/services/storage';
+import { 
+    deleteCourseFromUser, 
+    getAllCourses, 
+    getUserCourses, 
+    getWorkoutProgress,
+    getCourseWorkouts    
+ } from "@/services/courses/coursesApi";
+import { getMe, logoutUser } from "@/services/auth/authApi";
+import { getCourseProgress } from "@/services/api/index";
+import { useToast } from "@/hooks/useToast";
+
+
+
 
 type CourseWithProgress = {
   _id: string;
@@ -15,15 +27,15 @@ type CourseWithProgress = {
   durationInDays: number;
   dailyDurationInMinutes: { from: number; to: number };
   difficulty: string;
-  progress: number; // вычисляем из тренировок
+  progress: number; 
   image: string;
+  workouts: string[];
 };
 
 type Workout = {
-    id: string;
-    title: string;
-    subtitle: string;
-    day: string;
+    _id: string;
+    name: string;
+    day: number;
     completed?: boolean;
 };
 
@@ -40,55 +52,64 @@ const getImagePath = (nameEN: string): string => {
 };
 
 export default function ProfilePage() {
+    const { showSuccess, showError, showLoading, dismiss } = useToast();
     const router = useRouter();
     const [user, setUser] = useState<{ name: string; email: string } | null>(null);
     const [courses, setCourses] = useState<CourseWithProgress[]>([]);
-    const [isLoading, setIsLoading] = useState(true);   
+    const [isLoading, setIsLoading] = useState(true); 
+    const [error, setError] = useState<string | null>(null);  
     const [selectedCourse, setSelectedCourse] = useState<CourseWithProgress | null>(null);
     const [isWorkoutModalOpen, setIsWorkoutModalOpen] = useState(false);
-       
-    // Данные тренировок для каждого курса (синхронизированы с fitness.ts)
-    const workoutsData: Record<string, Workout[]> = {
-        '1': [ // Йога
-            { id: '1', title: 'Урок 1. Основы йоги', subtitle: 'Йога', day: '1 день', completed: false },
-            { id: '2', title: 'Урок 2. Утренняя практика', subtitle: 'Йога', day: '2 день', completed: false },
-            { id: '3', title: 'Урок 3. Расслабление', subtitle: 'Йога', day: '3 день', completed: false },
-            { id: '4', title: 'Урок 4. Баланс', subtitle: 'Йога', day: '4 день', completed: false },
-            { id: '5', title: 'Урок 5. Медитация', subtitle: 'Йога', day: '5 день', completed: false },
-        ],
-        '2': [ // Стретчинг
-            { id: '6', title: 'Урок 1. Растяжка ног', subtitle: 'Стретчинг', day: '1 день', completed: false },
-            { id: '7', title: 'Урок 2. Растяжка спины', subtitle: 'Стретчинг', day: '2 день', completed: false },
-            { id: '8', title: 'Урок 3. Растяжка рук', subtitle: 'Стретчинг', day: '3 день', completed: false },
-        ],
-        '3': [ // Фитнес
-            { id: '9', title: 'Урок 1. Кардио', subtitle: 'Фитнес', day: '1 день', completed: false },
-            { id: '10', title: 'Урок 2. Силовая', subtitle: 'Фитнес', day: '2 день', completed: false },
-            { id: '11', title: 'Урок 3. HIIT', subtitle: 'Фитнес', day: '3 день', completed: false },
-        ],
-        '4': [ // Степ-аэробика
-            { id: '12', title: 'Урок 1. Базовые шаги', subtitle: 'Степ-аэробика', day: '1 день', completed: false },
-            { id: '13', title: 'Урок 2. Комбинации', subtitle: 'Степ-аэробика', day: '2 день', completed: false },
-            { id: '14', title: 'Урок 3. Интенсив', subtitle: 'Степ-аэробика', day: '3 день', completed: false },
-        ],
-        '5': [ // Бодифлекс
-            { id: '15', title: 'Урок 1. Дыхательная гимнастика', subtitle: 'Бодифлекс', day: '1 день', completed: false },
-            { id: '16', title: 'Урок 2. Изометрические позы', subtitle: 'Бодифлекс', day: '2 день', completed: false },
-            { id: '17', title: 'Урок 3. Растяжка в движении', subtitle: 'Бодифлекс', day: '3 день', completed: false },
-        ],
-    };
+    const [courseWorkouts, setCourseWorkouts] = useState<Record<string, Workout[]>>({});
+    const [workoutsProgress, setWorkoutsProgress] = useState<Record<string, Record<string, boolean>>>({});
+    
+    // Загрузка статуса тренировок
+  const loadWorkoutsStatus = useCallback(async (courseId: string, workouts: Workout[]) => {
+    try {
+      const statusMap: Record<string, boolean> = {};
+      for (const workout of workouts) {
+        const progress = await getWorkoutProgress(courseId, workout._id);
+        statusMap[workout._id] = progress?.workoutCompleted || false;
+      }
+      setWorkoutsProgress(prev => ({
+        ...prev,
+        [courseId]: statusMap
+      }));
+    } catch (error) {
+      console.error('Ошибка загрузки статуса тренировок:', error);
+    }
+  }, []);
+
+    // Загрузка тренировок курса
+    const loadCourseWorkouts = useCallback(async (courseId: string) => {
+    try {
+      const workouts = await getCourseWorkouts(courseId);
+      const workoutsWithDay: Workout[] = workouts.map((workout, index) => ({
+        _id: workout._id,
+        name: workout.name,
+        day: index + 1,
+        completed: false
+      }));
+      setCourseWorkouts(prev => ({ ...prev, [courseId]: workoutsWithDay }));
+      await loadWorkoutsStatus(courseId, workoutsWithDay);
+    } catch (error) {
+      console.error('Ошибка загрузки тренировок курса:', error);
+      setCourseWorkouts(prev => ({ ...prev, [courseId]: [] }));
+    }
+  }, [loadWorkoutsStatus]);
 
     
     useEffect(() => {
         const loadProfile = async () => {
             try {
+                setError(null);
                 const token = storage.getToken();
                 if (!token) {
                     router.push('/workout/main');
                     return;
                 }
                 
-                // Получаем данные пользователя - добавляем .data
+                // Получаем данные пользователя
                 const userResponse = await getMe();
                 const userData = userResponse.data;
                 setUser({
@@ -96,32 +117,40 @@ export default function ProfilePage() {
                     email: userData.email,
                 });
                 
-                // Получаем все курсы - добавляем .data
-                const coursesResponse = await getAllCourses();
-                const allCourses = coursesResponse.data;
+                // Получаем все курсы
+                const allCourses = await getAllCourses();
                 
                 // Получаем ID курсов пользователя
                 const userCourseIds = await getUserCourses();
+
+                if (userCourseIds.length === 0) {
+                    setCourses([]);
+                    setIsLoading(false);
+                    return;
+                }
                 
-                // Для каждого курса загружаем прогресс
+                // Для каждого курса загружаем прогресс и тренировки
                 const coursesWithProgress: CourseWithProgress[] = [];
                 
                 for (const courseId of userCourseIds) {
-                    const course = allCourses.find((c: { _id: string }) => c._id === courseId);
+                    const course = allCourses.find((c) => c._id === courseId);
                     if (course) {
                         try {
-                            const progressResponse = await getCourseProgress(courseId);
-                            const progress = progressResponse.data;
+                            // Загружаем прогресс курса
+                            const progress = await getCourseProgress(courseId);
                             
                             // Вычисляем общий прогресс курса
                             let totalProgress = 0;
-                            if (progress.workoutsProgress && progress.workoutsProgress.length > 0) {
+                            if (progress && progress.workoutsProgress && progress.workoutsProgress.length > 0) {
                                 const completedCount = progress.workoutsProgress.filter(
-                                    (w: { workoutCompleted: boolean }) => w.workoutCompleted
+                                (w) => w.workoutCompleted
                                 ).length;
                                 totalProgress = Math.round((completedCount / progress.workoutsProgress.length) * 100);
                             }
-                            
+
+                            // Загружаем тренировки курса
+                            await loadCourseWorkouts(courseId);
+
                             coursesWithProgress.push({
                                 _id: course._id,
                                 nameRU: course.nameRU,
@@ -131,9 +160,9 @@ export default function ProfilePage() {
                                 difficulty: course.difficulty,
                                 progress: totalProgress,
                                 image: getImagePath(course.nameEN),
+                                workouts: course.workouts || [],
                             });
-                        } catch (err) {                            
-                            // Если нет прогресса — добавляем с 0%
+                        } catch (err) {
                             console.error('Ошибка загрузки прогресса для курса:', course.nameRU, err);
                             coursesWithProgress.push({
                                 _id: course._id,
@@ -144,6 +173,7 @@ export default function ProfilePage() {
                                 difficulty: course.difficulty,
                                 progress: 0,
                                 image: getImagePath(course.nameEN),
+                                workouts: course.workouts || [],
                             });
                         }
                     }
@@ -152,31 +182,38 @@ export default function ProfilePage() {
                 setCourses(coursesWithProgress);
             } catch (error) {
                 console.error('Ошибка загрузки профиля:', error);
-                router.push('/workout/main');
+                setError('Не удалось загрузить профиль. Пожалуйста, попробуйте позже.');
             } finally {
                 setIsLoading(false);
             }
         };
         
         loadProfile();
-    }, [router]);
-
-    const handleLogout = () => {
-        storage.clearAll();
-        router.push('/workout/main');
-    };
+    }, [router, loadCourseWorkouts]); 
 
     const handleDeleteCourse = async (courseId: string) => {
+        const loadingToast = showLoading('Удаление курса...');
+
         try {
             await deleteCourseFromUser(courseId);
             setCourses(courses.filter(c => c._id !== courseId));
             
-            // Обновляем кэш
             const updatedIds = courses.filter(c => c._id !== courseId).map(c => c._id);
             storage.setUserCoursesIds(updatedIds);
+
+            // Очищаем кэш тренировок
+            setCourseWorkouts(prev => {
+                const newState = { ...prev };
+                delete newState[courseId];
+                return newState;
+            });
+
+            dismiss(loadingToast);
+            showSuccess('Курс успешно удален!');
         } catch (error) {
+            dismiss(loadingToast);
             console.error('Ошибка удаления курса:', error);
-            alert('Не удалось удалить курс');
+            showError('Не удалось удалить курс');
         }
     };
 
@@ -197,27 +234,20 @@ export default function ProfilePage() {
         setSelectedCourse(null);
     };
 
+    const handleLogout = () => {
+        logoutUser();
+        router.push('/workout/main');
+    };
+
     const getButtonText = (progress: number) => {
-        if (progress === 0) {
-            return "Начать тренировку";
-        } else if (progress === 100) {
-            return "Начать заново";
-        } else {
-            return "Продолжить";
-        }
+        if (progress === 0) return "Начать тренировку";
+        if (progress === 100) return "Начать заново";
+        return "Продолжить";
     };
 
-    // Функция для определения статуса завершения тренировки
-    const isWorkoutCompleted = (courseId: string): boolean => {
-        const course = courses.find(c => c._id === courseId);
-        if (!course) return false;
-
-        // Для демо-режима: если прогресс курса 100%, все тренировки завершены
-        if (course.progress === 100) return true;
-        
-        // Здесь можно добавить более точную логику из API прогресса
-        return false;
-    };
+    const isWorkoutCompleted = (courseId: string, workoutId: string): boolean => {
+    return workoutsProgress[courseId]?.[workoutId] || false;
+  };
 
     if (isLoading) {
         return (
@@ -230,12 +260,27 @@ export default function ProfilePage() {
         );
     }
 
+    if (error) {
+        return (
+        <div className={styles['main-container']}>
+            <div className={styles['page-content']}>
+            <Header />
+            <div className={styles['error']}>
+                <p>{error}</p>
+                <button onClick={() => window.location.reload()} className={styles['retry-button']}>
+                Попробовать снова
+                </button>
+            </div>
+            </div>
+        </div>
+        );
+    }
+
     return (
        <div className={styles['main-container']}>
             <div className={styles['page-content']}>
                 <Header />
 
-                {/* Блок Профиль */}
                 <div className={styles['profile-section']}>
                     <h1 className={styles['section-title']}>Профиль</h1>
                     <div className={styles['profile-card']}>
@@ -261,114 +306,125 @@ export default function ProfilePage() {
                     </div>
                 </div>
 
-                {/* Блок Мои курсы */}
                 <div className={styles['courses-section']}>
                     <h2 className={styles['section-title']}>Мои курсы</h2>
-                    <div className={styles['courses-grid']}>
-                        {courses.map((course) => (
-                            <div key={course._id} className={styles['course-card']}>
-                                <div className={styles['card-image-wrapper']}>
-                                    <Image
-                                        width={360}
-                                        height={325}
-                                        className={styles['card-image']}
-                                        src={course.image}
-                                        alt={course.nameRU}
-                                    />
-                                    {/* Иконка удаления на изображении */}
-                                    <div 
-                                        className={styles['delete-icon-wrapper']}
-                                        onClick={() => handleDeleteCourse(course._id)}
-                                    >
-                                        <Image 
-                                            width={32}
-                                            height={32}
-                                            className={styles['delete-icon-image']}
-                                            src="/img/Delete-icon.png"
-                                            alt="delete"
+                    {courses.length === 0 ? (
+                        <div className={styles['no-courses']}>
+                        <p>У вас пока нет добавленных курсов</p>
+                        <button 
+                            className={styles['browse-courses-button']}
+                            onClick={() => router.push('/workout/main')}
+                        >
+                            Посмотреть курсы
+                        </button>
+                        </div>
+                    ) : (
+                        <div className={styles['courses-grid']}>
+                            {courses.map((course) => (
+                                <div key={course._id} className={styles['course-card']}>
+                                    <div className={styles['card-image-wrapper']}>
+                                        <Image
+                                            width={360}
+                                            height={325}
+                                            className={styles['card-image']}
+                                            src={course.image}
+                                            alt={course.nameRU}
                                         />
+                                        
+                                        <div 
+                                            className={styles['delete-icon-wrapper']}
+                                            onClick={() => handleDeleteCourse(course._id)}
+                                        >
+                                            <Image 
+                                                width={32}
+                                                height={32}
+                                                className={styles['delete-icon-image']}
+                                                src="/img/Delete-icon.png"
+                                                alt="delete"
+                                            />
+                                        </div>
                                     </div>
-                                </div>
-                                <div className={styles['card-content']}>
-                                    <div className={styles['card-title']}>{course.nameRU}</div>
-                                    
-                                    <div className={styles['card-buttons-wrapper']}>
-                                        <div className={styles['card-buttons-row']}>
-                                            <button className={styles['btn-calendar']}>
+                                    <div className={styles['card-content']}>
+                                        <div className={styles['card-title']}>{course.nameRU}</div>
+                                        
+                                        <div className={styles['card-buttons-wrapper']}>
+                                            <div className={styles['card-buttons-row']}>
+                                                <button className={styles['btn-calendar']}>
+                                                    <Image
+                                                        width={18}
+                                                        height={18}
+                                                        className={styles['btn-icon']}
+                                                        src="/img/calendar-icon.png"
+                                                        alt="calendar"
+                                                    />
+                                                    <span>{course.durationInDays}</span>
+                                                </button>
+                                                <button className={styles['btn-time']}>
+                                                    <Image
+                                                        width={18}
+                                                        height={18}
+                                                        className={styles['btn-icon']}
+                                                        src="/img/time-icon.png"
+                                                        alt="time"
+                                                    />
+                                                    <span>{course.dailyDurationInMinutes.from}-{course.dailyDurationInMinutes.to} мин/день</span>
+                                                </button>
+                                            </div>
+                                            <button className={styles['btn-difficulty']}>
                                                 <Image
                                                     width={18}
                                                     height={18}
                                                     className={styles['btn-icon']}
-                                                    src="/img/calendar-icon.png"
-                                                    alt="calendar"
+                                                    src="/img/diagram-icon.png"
+                                                    alt="difficulty"
                                                 />
-                                                <span>{course.durationInDays}</span>
-                                            </button>
-                                            <button className={styles['btn-time']}>
-                                                <Image
-                                                    width={18}
-                                                    height={18}
-                                                    className={styles['btn-icon']}
-                                                    src="/img/time-icon.png"
-                                                    alt="time"
-                                                />
-                                                <span>{course.dailyDurationInMinutes.from}-{course.dailyDurationInMinutes.to} мин/день</span>
+                                                <span>Сложность: {course.difficulty}</span>
                                             </button>
                                         </div>
-                                        <button className={styles['btn-difficulty']}>
-                                            <Image
-                                                width={18}
-                                                height={18}
-                                                className={styles['btn-icon']}
-                                                src="/img/diagram-icon.png"
-                                                alt="difficulty"
-                                            />
-                                            <span>Сложность: {course.difficulty}</span>
-                                        </button>
-                                    </div>
 
-                                    {/* Блок прогресса */}
-                                    <div className={styles['progress-section']}>
-                                        <div className={styles['progress-header']}>
-                                            <div className={styles['progress-label']}>Прогресс</div>
-                                            <div className={styles['progress-percent']}>{course.progress}%</div>
+                                        {/* Блок прогресса */}
+                                        <div className={styles['progress-section']}>
+                                            <div className={styles['progress-header']}>
+                                                <div className={styles['progress-label']}>Прогресс</div>
+                                                <div className={styles['progress-percent']}>{course.progress}%</div>
+                                            </div>
+                                            <div className={styles['progress-bar-wrapper']}>
+                                                <div 
+                                                    className={styles['progress-bar-fill']}
+                                                    style={{ width: `${course.progress}%` }}
+                                                />
+                                            </div>
                                         </div>
-                                        <div className={styles['progress-bar-wrapper']}>
-                                            <div 
-                                                className={styles['progress-bar-fill']}
-                                                style={{ width: `${course.progress}%` }}
-                                            />
-                                        </div>
-                                    </div>
 
-                                    {/* Кнопка действия */}
-                                    <button 
-                                        className={styles['continue-button']}
-                                        onClick={() => handleCourseAction(course)}
-                                    >
-                                        {getButtonText(course.progress)}
-                                    </button>                                    
+                                        
+                                        <button 
+                                            className={styles['continue-button']}
+                                            onClick={() => handleCourseAction(course)}
+                                        >
+                                            {getButtonText(course.progress)}
+                                        </button>                                    
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>    
 
-            {/* Модальное окно выбора тренировки */}
+            
             {isWorkoutModalOpen && selectedCourse && (
                 <div className={styles['modal-overlay']} onClick={handleCloseModal}>
                     <div className={styles['workout-modal']} onClick={(e) => e.stopPropagation()}>
                         <h2 className={styles['workout-modal-title']}>Выберите тренировку</h2>
                         
                         <div className={styles['workout-list']}>
-                            {workoutsData[selectedCourse._id]?.map((workout) => {
-                                const isCompleted = isWorkoutCompleted(selectedCourse._id);
+                            {(courseWorkouts[selectedCourse._id] || []).map((workout) => {
+                                const isCompleted = isWorkoutCompleted(selectedCourse._id, workout._id);
                                 return (
                                     <div 
-                                        key={workout.id}
+                                        key={workout._id}
                                         className={styles['workout-item']}
-                                        onClick={() => handleSelectWorkout(workout.id)}
+                                        onClick={() => handleSelectWorkout(workout._id)}
                                     >
                                         <div className={`${styles['workout-checkbox']} ${isCompleted ? styles['completed'] : ''}`}>
                                             {isCompleted && (
@@ -378,9 +434,9 @@ export default function ProfilePage() {
                                             )}
                                         </div>
                                         <div className={styles['workout-info']}>
-                                            <div className={styles['workout-title']}>{workout.title}</div>
+                                            <div className={styles['workout-title']}>{workout.name}</div>
                                             <div className={styles['workout-subtitle']}>
-                                                {workout.subtitle} / {workout.day}
+                                                Тренировка / {workout.day} день
                                             </div>
                                         </div>
                                         <div className={styles['workout-arrow']}>›</div>

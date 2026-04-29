@@ -6,8 +6,14 @@ import Image from 'next/image';
 import { ChangeEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { storage } from '@/services/storage';
-import { register, login, getMe, addCourseToUser } from '@/services/api';
 import Modal from '../Modal/Modal';
+import { 
+    getMe, 
+    loginUser, 
+    registerUser 
+} from '@/services/auth/authApi';
+import { addCourseToUser } from '@/services/courses/coursesApi';
+import { useToast } from '@/hooks/useToast';
 
 type SignupModalProps = {
   isOpen: boolean;
@@ -18,6 +24,7 @@ type SignupModalProps = {
 
 export default function SignupModal({ isOpen, onClose, onSwitchToSignin, onLoginSuccess }: SignupModalProps) {
     const router = useRouter();
+    const { showSuccess, showError, showLoading, dismiss } = useToast();
     const [hasError, setHasError] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -65,6 +72,7 @@ export default function SignupModal({ isOpen, onClose, onSwitchToSignin, onLogin
         setHasError(false);
         setErrorMessage('');
 
+        // Базовая валидация на клиенте
         if (!emailRegex.test(email)) {
             setHasError(true);
             setErrorMessage('Введите корректный email');
@@ -85,7 +93,7 @@ export default function SignupModal({ isOpen, onClose, onSwitchToSignin, onLogin
             setIsLoading(false);
             return;
         } 
-        
+
         const passwordError = validatePassword(password);
         if (passwordError) {
             setHasError(true);
@@ -93,12 +101,17 @@ export default function SignupModal({ isOpen, onClose, onSwitchToSignin, onLogin
             setIsLoading(false);
             return;
         }
+
+        const loadingToast = showLoading('Регистрация...');
         
         try {
-            await register(email, password);
+            // Регистрация
+            await registerUser({ email, password });
             
-            const loginResponse = await login(email, password);
-            storage.setToken(loginResponse.data.token);
+            // Автоматический вход после регистрации
+            const loginResponse = await loginUser({ email, password });
+            const token = loginResponse.data.token;
+            storage.setToken(token);
             
             const userResponse = await getMe();
             const userData = userResponse.data;
@@ -108,36 +121,55 @@ export default function SignupModal({ isOpen, onClose, onSwitchToSignin, onLogin
                 email: userData.email,
             });
             
-            storage.setUserCoursesIds(userData.selectedCourses);
+            // Безопасная проверка selectedCourses
+            const userCoursesIds = userData.selectedCourses || [];
+            storage.setUserCoursesIds(userCoursesIds);
             
+            // Проверяем, есть ли курс для добавления
             const pendingCourseId = localStorage.getItem('pendingCourseId');
-            if (pendingCourseId) {
+            if (pendingCourseId && pendingCourseId !== 'null') {
                 localStorage.removeItem('pendingCourseId');
                 
-                if (!userData.selectedCourses.includes(pendingCourseId)) {
+                if (!userCoursesIds.includes(pendingCourseId)) {
                     try {
                         await addCourseToUser(pendingCourseId);
-                        const updatedCourses = [...userData.selectedCourses, pendingCourseId];
+                        const updatedCourses = [...userCoursesIds, pendingCourseId];
                         storage.setUserCoursesIds(updatedCourses);
+                        showSuccess('Курс успешно добавлен!');
                     } catch (addError) {
                         console.error('Ошибка добавления курса:', addError);
                     }
                 }
             }
 
+            dismiss(loadingToast);
+            showSuccess('Регистрация прошла успешно!');
+
             // Вызываем callback для обновления состояния авторизации
-            onLoginSuccess();
-            
+            onLoginSuccess();            
             onClose();
             router.refresh();
         } catch (err) {
-            const error = err as Error;
+            dismiss(loadingToast);
+            console.error('Registration error:', err);
             setHasError(true);
-            setErrorMessage(error.message);
+
+            // Обрабатываем ошибки от сервера
+            const error = err as { response?: { status?: number; data?: { message?: string } } };
+            let message = 'Ошибка регистрации. Попробуйте позже';
+
+            if (error.response?.data?.message) {
+                message = error.response.data.message;
+            } else if (error.response?.status === 400) {
+                message = 'Пользователь с таким email уже существует или данные неверны';
+            }
+
+            setErrorMessage(message);
+            showError(message);
         } finally {
             setIsLoading(false);
         }
-    };
+    };    
 
     return (
         <Modal isOpen={isOpen} onClose={onClose}>
@@ -156,6 +188,7 @@ export default function SignupModal({ isOpen, onClose, onSwitchToSignin, onLogin
                         className={classNames(styles.modal__input, styles.login)}
                         type="email"
                         name="email"
+                        autoComplete="email"
                         placeholder="Эл.почта"
                         value={email}
                         onChange={onChangeEmail}
@@ -165,6 +198,7 @@ export default function SignupModal({ isOpen, onClose, onSwitchToSignin, onLogin
                         className={styles.modal__input}
                         type="password"
                         name="password"
+                        autoComplete="new-password"
                         placeholder="Пароль"
                         value={password}
                         onChange={onChangePassword}
@@ -174,6 +208,7 @@ export default function SignupModal({ isOpen, onClose, onSwitchToSignin, onLogin
                         className={styles.modal__input}
                         type="password"
                         name="confirmPassword"
+                        autoComplete="new-password"
                         placeholder="Повторите пароль"
                         value={confirmPassword}
                         onChange={onChangeConfirmPassword}

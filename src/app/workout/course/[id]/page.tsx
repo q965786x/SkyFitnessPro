@@ -6,9 +6,17 @@ import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { storage } from '@/services/storage';
-import { getCourse, addCourseToUser } from '@/services/api';
 import SigninModal from '@/components/AuthModal/SigninModal';
 import SignupModal from '@/components/AuthModal/SignupModal';
+import { 
+    addCourseToUser, 
+    getCourseById, 
+    getUserCourses
+} from '@/services/courses/coursesApi';
+import { AxiosError } from 'axios';
+import { useToast } from '@/hooks/useToast';
+
+
 
 type Course = {
   _id: string;
@@ -36,6 +44,7 @@ const getImagePath = (nameEN: string, type: 'card' | 'banner' = 'banner'): strin
 };
 
 export default function CoursePage() {
+    const { showSuccess, showError, showLoading, dismiss } = useToast();
     const params = useParams();
     const router = useRouter();
     const courseId = params.id as string;
@@ -50,15 +59,24 @@ export default function CoursePage() {
     const loadCourse = useCallback(async () => {
         setIsLoading(true);
         try {
+            console.log('Loading course with ID:', courseId);
             // Загружаем данные курса
-            const courseResponse = await getCourse(courseId);
-            setCourse(courseResponse.data);
+            const courseData = await getCourseById(courseId);
+            console.log('Received course data:', courseData);
             
+            if (courseData && courseData._id) {
+                setCourse(courseData);
+            } else {
+                console.error('Курс не найден для ID:', courseId);
+                setCourse(null);
+            }
+
             // Проверяем авторизацию
             const token = storage.getToken();
             setIsAuthorized(!!token);
         } catch (error) {
             console.error('Ошибка загрузки курса:', error);
+            setCourse(null);
         } finally {
             setIsLoading(false);
         }
@@ -70,21 +88,39 @@ export default function CoursePage() {
 
     const handleAddCourse = async () => {
         if (!isAuthorized) {
-            // Сохраняем ID курса для добавления после авторизации
             localStorage.setItem('pendingCourseId', courseId);
             setIsSigninModalOpen(true);
             return;
         }
 
         setIsAdding(true);
+        const loadingToast = showLoading('Добавление курса...');
+
         try {
-            await addCourseToUser(courseId);
-            alert('Курс успешно добавлен!');
-            // После добавления перенаправляем на страницу тренировок курса
+            const result = await addCourseToUser(courseId);
+            console.log('Add course result:', result);
+            
+            // Обновляем список курсов пользователя
+            const updatedCourses = await getUserCourses();
+            storage.setUserCoursesIds(updatedCourses);
+            
+            dismiss(loadingToast);
+            showSuccess('Курс успешно добавлен!');
+
             router.push(`/workout/course/${courseId}`);
+            router.refresh();
         } catch (error) {
+            dismiss(loadingToast);
             console.error('Ошибка добавления курса:', error);
-            alert('Не удалось добавить курс');
+            
+            let errorMessage = 'Не удалось добавить курс';
+            if (error instanceof AxiosError) {
+                errorMessage = error.response?.data?.message || error.message || 'Не удалось добавить курс';
+            } else if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            
+            showError(errorMessage);
         } finally {
             setIsAdding(false);
         }
@@ -100,24 +136,33 @@ export default function CoursePage() {
 
     if (isLoading) {
         return (
-        <div className={styles.loading}>
-            <div className={styles.spinner}></div>
-            <p>Загрузка курса...</p>
-        </div>
+            <div className={styles['main-container']}>
+                <div className={styles['page-content']}>
+                    <Header />
+                    <div className={styles.loading}>
+                        <p>Загрузка курса...</p>
+                    </div>
+                </div>
+            </div>
         );
     }
 
     if (!course) {
         return (
-        <div className={styles.error}>
-            <h2>Курс не найден</h2>
-            <button 
-                onClick={() => router.push('/workout/main')} 
-                className={styles.backButton}
-            >
-                Вернуться на главную
-            </button>
-        </div>
+            <div className={styles['main-container']}>
+                <div className={styles['page-content']}>
+                    <Header />
+                    <div className={styles.error}>
+                        <h2>Курс не найден</h2>
+                        <button 
+                            className={styles.backButton}
+                            onClick={() => router.push('/workout/main')} 
+                        >
+                            Вернуться на главную
+                        </button>
+                    </div>
+                </div>
+            </div>
         );
     }
 
@@ -125,7 +170,7 @@ export default function CoursePage() {
         <>
             <div className={styles['main-container']}>
                 <div className={styles['page-content']}>
-                    <Header />
+                    <Header onLoginClick={() => setIsSigninModalOpen(true)} />
 
                     <div className={styles['course-container']}>
                         {/* Баннер курса */}
@@ -136,13 +181,14 @@ export default function CoursePage() {
                                 className={styles['course-image']}
                                 src={getImagePath(course.nameEN, 'banner')}
                                 alt={course.nameRU}
+                                priority
                             />
                         </div>
 
                         {/* "Подойдет для вас, если:" */}
                         <div className={styles['section-label']}>Подойдет для вас, если:</div>
                         <div className={styles['features-row']}>
-                            {course.fitting.map((item, index) => (
+                            {course.fitting && course.fitting.map((item, index) => (
                                 <div key={index} className={styles['feature-card']}>
                                     <div className={styles['feature-content']}>
                                         <div className={styles['feature-number']}>{index + 1}</div>
@@ -152,12 +198,16 @@ export default function CoursePage() {
                             ))}
                         </div>
 
+
                         {/* Направления */}
                         <div className={styles['directions-wrapper']}>
                             <h2 className={styles['directions-heading']}>Направления</h2>
                             <div className={styles['directions-full-block']}>
-                                {course.directions.map((direction, index) => (
-                                    <span key={index} className={styles['direction-item']}>
+                                {course.directions && course.directions.map((direction, index) => (
+                                    <span 
+                                        key={index} 
+                                        className={styles['direction-item']}
+                                    >
                                         ✦ {direction}
                                     </span>
                                 ))}
@@ -170,15 +220,15 @@ export default function CoursePage() {
                             <div className={styles['mobile-image']}>
                                 <div className={styles['mobile-image-placeholder']}>
                                     <Image
-                                        src={getImagePath(course.nameEN, 'card')}
-                                        alt={course.nameRU}
+                                        src="/img/Sportsman.png"
+                                        alt={'sportsman'}
                                         fill
-                                        className={styles['mobile-image-img']}
+                                        style={{ objectFit: 'cover' }}
                                         sizes="(max-width: 768px) 100vw, 50vw"
+                                        priority
                                     />
-                                </div>
-                            </div>
-
+                                </div> 
+                            </div> 
                             {/* Белый блок с тенью */}
                             <div className={styles['journey-card']}>
                                 <div className={styles['journey-content']}>
@@ -211,16 +261,17 @@ export default function CoursePage() {
                                     )}
                                 </div>
 
-                                {/* Десктоп изображение (только на lg+) */}
+                                {/* Десктоп изображение - абсолютно позиционировано */}
                                 <div className={styles['desktop-image']}>
                                     <Image
-                                        src={getImagePath(course.nameEN, 'card')}
-                                        alt={course.nameRU}
+                                        src="/img/Sportsman.png"
+                                        alt="sportsman"
                                         fill
                                         className={styles['desktop-image-img']}
                                         sizes="487px"
+                                        priority
                                     />
-                                </div>
+                                </div>                       
                             </div>
                         </div>
 

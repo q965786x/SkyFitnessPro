@@ -1,7 +1,6 @@
-export type User = {
-    name: string;
-    email: string;    
-};
+import { UserType } from "@/sharedTypes/sharedTypes";
+
+export type User = UserType;
 
 export const storage = {
     // Токен
@@ -18,12 +17,12 @@ export const storage = {
     },
 
     // Пользователь
-    getUser: (): User | null => {
+    getUser: (): UserType | null => {
         const user = localStorage.getItem('user');
         return user ? JSON.parse(user) : null;
     },
     
-    setUser: (user: User): void => {
+    setUser: (user: UserType): void => {
         localStorage.setItem('user', JSON.stringify(user));
     },
     
@@ -31,7 +30,7 @@ export const storage = {
         localStorage.removeItem('user');
     },
 
-    // ID курсов пользователя (кэш)    
+    // ID курсов пользователя (кэш) - опционально, можно удалить
     getUserCoursesIds: (): string[] => {
         const courses = localStorage.getItem('userCoursesIds');
         return courses ? JSON.parse(courses) : [];
@@ -39,6 +38,10 @@ export const storage = {
     
     setUserCoursesIds: (courseIds: string[]): void => {
         localStorage.setItem('userCoursesIds', JSON.stringify(courseIds));
+    },
+
+    removeUserCoursesIds: (): void => {
+        localStorage.removeItem('userCoursesIds');
     },
     
     // Полная очистка

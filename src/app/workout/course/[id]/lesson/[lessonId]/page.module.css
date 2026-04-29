@@ -21,47 +21,22 @@
     letter-spacing: -0.5px;
 }
 
-/* Фотоблок */
-.image-container {
+.video-container {
     width: 100%;
     max-width: 1160px;
     margin-bottom: 40px;
     border-radius: 30px;
     overflow: hidden;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-    background: #f0f0f0;
+    background: #000000;
 }
 
-.course-image {
-    width: 100%;
-    height: auto;
+.video-container iframe {
     display: block;
-    object-fit: cover;
-}
-
-/* Блок с упражнениями */
-.exercises-section {
-    width: 100%;
-    max-width: 1160px;
-}
-
-.exercises-title {
-    font-size: 32px;
-    font-weight: 400;
-    color: #000000;
-    margin-bottom: 20px;
-}
-
-/* Сетка упражнений: 3 колонки */
-.exercises-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    margin-bottom: 50px;
 }
 
 /* Карточка упражнения */
-.exercise-card {
+/*.exercise-card {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -97,6 +72,100 @@
     color: #000000;
     min-width: 50px;
     text-align: right;
+} */
+
+/* Блок с упражнениями */
+.exercises-section {
+    width: 100%;
+    max-width: 1160px;
+}
+
+.exercises-title {
+    font-size: 32px;
+    font-weight: 400;
+    color: #000000;
+    margin-bottom: 20px;
+}
+
+/* Сетка упражнений: 3 колонки */
+.exercises-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 50px;
+}
+
+/* Список упражнений */
+.exercises-list {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin-bottom: 40px;
+}
+
+/* Элемент упражнения */
+.exercise-item {
+    background: #F5F5F5;
+    border-radius: 16px;
+    padding: 20px 24px;
+    transition: all 0.2s ease;
+}
+
+.exercise-item:hover {
+    background: #E8E8E8;
+}
+
+.exercise-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+}
+
+.exercise-name {
+    font-size: 18px;
+    font-weight: 500;
+    color: #000000;
+}
+
+.exercise-percent {
+    font-size: 18px;
+    font-weight: 400;
+    color: #000000;
+}
+
+/* Progress bar контейнер */
+.progress-bar-container {
+    width: 100%;
+    height: 8px;
+    background-color: #E0E0E0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+/* Заполнение progress bar */
+.progress-bar-fill-exercise {
+    height: 100%;
+    background: linear-gradient(90deg, #BCEC30 0%, #9ED020 100%);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.exercise-stats {
+    display: flex;
+    gap: 4px;
+    font-size: 14px;
+    color: #666666;
+}
+
+.exercise-current {
+    font-weight: 600;
+    color: #000000;
+}
+
+.exercise-max {
+    color: #888888;
 }
 
 /* Кнопка "Заполнить свой прогресс" */
@@ -293,19 +362,7 @@
     margin-bottom: 10px;
 }
 
-.video-container {
-    width: 100%;
-    max-width: 1160px;
-    margin-bottom: 40px;
-    border-radius: 30px;
-    overflow: hidden;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-    background: #000000;
-}
 
-.video-container iframe {
-    display: block;
-}
 
 
 /* Адаптивность */

@@ -5,14 +5,19 @@ import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { storage } from '@/services/storage';
-import { getMe } from '@/services/api';
+import { getMe, logoutUser } from '@/services/auth/authApi';
+
 
 type UserProps = {
     name: string;
     email: string;
 };
 
-export default function Header() {
+type HeaderProps = {
+    onLoginClick?: () => void; // Добавляем пропс для открытия модального окна
+};
+
+export default function Header({ onLoginClick }: HeaderProps) {
     const router = useRouter();
     const pathname = usePathname();
     const [user, setUser] = useState<UserProps | null>(null);
@@ -32,14 +37,20 @@ export default function Header() {
             const token = storage.getToken();
             if (token) {
                 try {
-                    const response = await getMe(); // Получаем axios response
-                    const userData = response.data; // Берем .data
-                    setUser({
-                        name: userData.email.split('@')[0],
-                        email: userData.email,
-                    });
+                    const response = await getMe();
+                    const userData = response.data;
+                    // Проверяем, что userData и email существуют
+                    if (userData && userData.email) {
+                        setUser({
+                            name: userData.email.split('@')[0],
+                            email: userData.email,
+                        });
+                    } else {
+                        console.error('Некорректные данные пользователя:', userData);
+                        storage.clearAll();
+                        setUser(null);
+                    }
                 } catch (error) {
-                    // Токен невалидный
                     console.error('Ошибка авторизации:', error);
                     storage.clearAll();
                     setUser(null);
@@ -50,6 +61,7 @@ export default function Header() {
             
         checkAuth();
     }, []);
+
 
     // Закрытие модального окна при клике вне его
     useEffect(() => {
@@ -70,28 +82,35 @@ export default function Header() {
     }, [isModalOpen]);
 
     const handleLogout = () => {
-        storage.clearAll(); // Очищаем всё: токен, пользователя, курсы
+        logoutUser();
         setUser(null);
         setIsModalOpen(false);
-        router.push('/workout/main'); // Перенаправляем на главную страницу
+        router.push('/workout/main');
     };
 
     const handleProfile = () => {
         setIsModalOpen(false);
-        // Переход на страницу профиля
         router.push('/profile');
     };
 
-    const handleLogin = () => {
-        // Сохраняем текущий курс для добавления после авторизации (если на странице курса)
+    const handleLoginClick = () => {
+        // Сохраняем текущий курс для добавления после авторизации
         const pathParts = pathname?.split('/');
         if (pathParts && pathParts[1] === 'workout' && pathParts[2] === 'course' && pathParts[3]) {
             localStorage.setItem('pendingCourseId', pathParts[3]);
+            }else {
+            // Очищаем pendingCourseId, если мы не на странице курса
+            localStorage.removeItem('pendingCourseId');
         }
-        router.push('/workout/main');
+
+
+        if (onLoginClick) {
+            onLoginClick();
+        } else {
+            router.push('/workout/main');
+        }
     };
 
-    // Показываем загрузку, если проверяем авторизацию
     if (isLoading) {
         return (
             <div className={styles['header-nav']}>
@@ -103,6 +122,7 @@ export default function Header() {
                             className={styles['logo__image']}
                             src="/img/logo.png"
                             alt={'logo'}
+                            priority
                         />
                     </div>
                     {!hideSubtitle && (
@@ -114,7 +134,7 @@ export default function Header() {
         );
     }
 
-    // Если пользователь НЕ авторизован - показываем кнопку "Войти"
+    
     if (!user) {
         return (
             <div className={styles['header-nav']}>
@@ -134,14 +154,7 @@ export default function Header() {
                 </div>
                 <button 
                     className={styles['login-btn']} 
-                    onClick={() => {
-                        // Сохраняем текущий курс для добавления после авторизации (если на странице курса)
-                        const pathParts = pathname?.split('/');
-                        if (pathParts && pathParts[1] === 'workout' && pathParts[2] === 'course' && pathParts[3]) {
-                            localStorage.setItem('pendingCourseId', pathParts[3]);
-                        }
-                        router.push('/workout/main');
-                    }}
+                    onClick={handleLoginClick}
                 >
                     Войти
                 </button>
@@ -167,8 +180,7 @@ export default function Header() {
                 )}
             </div>
 
-            <div className={styles['user-info']}>
-                {/* ДОБАВЛЯЕМ onClick для открытия модального окна */}
+            <div className={styles['user-info']}>                
                 <div 
                     className={styles['user-avatar']}
                     onClick={() => setIsModalOpen(!isModalOpen)}
@@ -201,7 +213,6 @@ export default function Header() {
                     />
                 </button>
 
-                {/* Модальное окно */}
                 {isModalOpen && (
                     <div ref={modalRef} className={styles['modal']}>
                         <div className={styles['modal-user-name']}>{user.name}</div>

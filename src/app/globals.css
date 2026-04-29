@@ -19,3 +19,21 @@ a, input, button {
 a {
   text-decoration: none;
 }
+
+/* Кастомные стили для тостов */
+.react-hot-toast {
+  z-index: 9999;
+}
+
+.react-hot-toast .react-hot-toast-toast {
+  font-family: var(--font-roboto), sans-serif;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.react-hot-toast .react-hot-toast-success {
+  background: linear-gradient(135deg, #1E3C72 0%, #2A5298 100%);
+}
+
+.react-hot-toast .react-hot-toast-error {
+  background: linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%);
+}
