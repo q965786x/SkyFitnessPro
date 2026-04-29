@@ -12,6 +12,7 @@ import {
   getUserCourses 
 } from '@/services/courses/coursesApi';
 import { logoutUser } from '@/services/auth/authApi';
+import CourseImage from '@/components/CourseImage/CourseImage';
 
 type Course = {
   _id: string;
@@ -24,18 +25,6 @@ type Course = {
   durationInDays?: number;
   dailyDurationInMinutes?: { from: number; to: number };
   workouts: string[];
-};
-
-// Маппинг названий курсов на имена файлов изображений
-const getImagePath = (nameEN: string): string => {
-  const imageMap: Record<string, string> = {
-    'Yoga': '/img/Yoga.png',
-    'Stretching': '/img/Stretching.png',
-    'Fitness': '/img/Fitness.png',
-    'StepAerobics': '/img/Step.png',
-    'Bodyflex': '/img/Bodyflex.png',
-  };
-  return imageMap[nameEN] || '/img/Yoga.png';
 };
 
 export default function MainPage() {
@@ -62,7 +51,7 @@ export default function MainPage() {
         setUserCoursesIds([]);
       }
       
-      // Загружаем все курсы - теперь getAllCourses возвращает массив курсов напрямую
+      // Загружаем все курсы
       const coursesData = await getAllCourses();
       console.log('Loaded courses:', coursesData);
       
@@ -199,13 +188,13 @@ export default function MainPage() {
                     style={{ cursor: 'pointer' }}
                   >
                     <div className={styles['card-image-wrapper']}>
-                      <Image 
+                      <CourseImage 
+                        nameEN={course.nameEN}
+                        nameRU={course.nameRU}
+                        type="card"
                         width={360}
                         height={325}
                         className={styles['card-image']}
-                        src={getImagePath(course.nameEN)}
-                        alt={course.nameRU}
-                        loading="lazy"
                       />
                       
                       <div 

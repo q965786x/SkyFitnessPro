@@ -16,9 +16,7 @@ import {
 import { getMe, logoutUser } from "@/services/auth/authApi";
 import { getCourseProgress } from "@/services/api/index";
 import { useToast } from "@/hooks/useToast";
-
-
-
+import CourseImage from "@/components/CourseImage/CourseImage";
 
 type CourseWithProgress = {
   _id: string;
@@ -28,7 +26,6 @@ type CourseWithProgress = {
   dailyDurationInMinutes: { from: number; to: number };
   difficulty: string;
   progress: number; 
-  image: string;
   workouts: string[];
 };
 
@@ -37,18 +34,6 @@ type Workout = {
     name: string;
     day: number;
     completed?: boolean;
-};
-
-// Маппинг изображений
-const getImagePath = (nameEN: string): string => {
-  const imageMap: Record<string, string> = {
-    'Yoga': '/img/Yoga.png',
-    'Stretching': '/img/Stretching.png',
-    'Fitness': '/img/Fitness.png',
-    'StepAerobics': '/img/Step.png',
-    'Bodyflex': '/img/Bodyflex.png',
-  };
-  return imageMap[nameEN] || '/img/Yoga.png';
 };
 
 export default function ProfilePage() {
@@ -159,7 +144,6 @@ export default function ProfilePage() {
                                 dailyDurationInMinutes: course.dailyDurationInMinutes,
                                 difficulty: course.difficulty,
                                 progress: totalProgress,
-                                image: getImagePath(course.nameEN),
                                 workouts: course.workouts || [],
                             });
                         } catch (err) {
@@ -172,7 +156,6 @@ export default function ProfilePage() {
                                 dailyDurationInMinutes: course.dailyDurationInMinutes,
                                 difficulty: course.difficulty,
                                 progress: 0,
-                                image: getImagePath(course.nameEN),
                                 workouts: course.workouts || [],
                             });
                         }
@@ -323,12 +306,13 @@ export default function ProfilePage() {
                             {courses.map((course) => (
                                 <div key={course._id} className={styles['course-card']}>
                                     <div className={styles['card-image-wrapper']}>
-                                        <Image
+                                        <CourseImage
+                                            nameEN={course.nameEN}
+                                            nameRU={course.nameRU}
+                                            type="card"
                                             width={360}
                                             height={325}
                                             className={styles['card-image']}
-                                            src={course.image}
-                                            alt={course.nameRU}
                                         />
                                         
                                         <div 

@@ -15,6 +15,7 @@ import {
 } from '@/services/courses/coursesApi';
 import { AxiosError } from 'axios';
 import { useToast } from '@/hooks/useToast';
+import CourseImage from '@/components/CourseImage/CourseImage';
 
 
 
@@ -29,18 +30,6 @@ type Course = {
   durationInDays: number;
   dailyDurationInMinutes: { from: number; to: number };
   workouts: string[];
-};
-
-// Маппинг изображений
-const getImagePath = (nameEN: string, type: 'card' | 'banner' = 'banner'): string => {
-  const imageMap: Record<string, string> = {
-    'Yoga': type === 'banner' ? '/img/Yoga-course.png' : '/img/Yoga.png',
-    'Stretching': type === 'banner' ? '/img/Stretching-course.png' : '/img/Stretching.png',
-    'Fitness': type === 'banner' ? '/img/Fitness-course.png' : '/img/Fitness.png',
-    'StepAerobics': type === 'banner' ? '/img/Step-course.png' : '/img/Step.png',
-    'Bodyflex': type === 'banner' ? '/img/Bodyflex-course.png' : '/img/Bodyflex.png',
-  };
-  return imageMap[nameEN] || (type === 'banner' ? '/img/Yoga-course.png' : '/img/Yoga.png');
 };
 
 export default function CoursePage() {
@@ -175,13 +164,14 @@ export default function CoursePage() {
                     <div className={styles['course-container']}>
                         {/* Баннер курса */}
                         <div className={styles['course-image-wrapper']}>
-                            <Image
+                            <CourseImage
+                                nameEN={course.nameEN}
+                                nameRU={course.nameRU}
+                                type="banner"
                                 width={1160}
                                 height={310}
                                 className={styles['course-image']}
-                                src={getImagePath(course.nameEN, 'banner')}
-                                alt={course.nameRU}
-                                priority
+                                priority={true}
                             />
                         </div>
 
