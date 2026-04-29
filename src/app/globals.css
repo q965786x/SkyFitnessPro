@@ -6,6 +6,7 @@
 
 body {
   font-family: var(--font-roboto), 'Arial';
+  overflow-x: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -36,4 +37,25 @@ a {
 
 .react-hot-toast .react-hot-toast-error {
   background: linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%);
+}
+
+/* Адаптивные стили для всех страниц */
+@media (max-width: 1440px) {
+  .main-container {
+    width: 100% !important;
+  }
+}
+
+/* Планшетная версия (768px - 1024px) */
+@media (max-width: 1024px) {
+  .page-content {
+    padding: 32px 40px 48px 40px !important;
+  }
+}
+
+/* Мобильная версия (до 768px) */
+@media (max-width: 768px) {
+  .page-content {
+    padding: 20px 16px 32px 16px !important;
+  }
 }

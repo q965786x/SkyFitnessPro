@@ -18,6 +18,9 @@
   border-radius: 30px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
   animation: modalFadeIn 0.3s ease-out;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .closeButton {
@@ -42,6 +45,42 @@
 .closeButton:hover {
   background: #e0e0e0;
   transform: scale(1.05);
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 768px) {
+  .modal {
+    border-radius: 20px;
+    margin: 20px;
+  }
+  
+  .closeButton {
+    top: 16px;
+    right: 16px;
+    width: 28px;
+    height: 28px;
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .closeButton {
+    top: 12px;
+    right: 12px;
+    width: 24px;
+    height: 24px;
+    font-size: 18px;
+  }
 }
 
 @keyframes modalFadeIn {

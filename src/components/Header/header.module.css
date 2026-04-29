@@ -34,6 +34,7 @@
     font-size: 18px;
     font-weight: 400;
     cursor: pointer;
+    transition: all 0.2s ease;
 }
 
 .login-btn:hover {
@@ -163,4 +164,142 @@
 .loading-placeholder {
     width: 104px;
     height: 52px;
+}
+
+/* Планшетная версия (768px - 1024px) */
+@media (max-width: 1024px) {
+    .logo__image {
+        width: 180px;
+        height: auto;
+    }
+    
+    .logo-subtitle {
+        font-size: 16px;
+    }
+    
+    .user-name {
+        font-size: 20px;
+    }
+}
+
+/* Мобильная версия (до 768px) */
+@media (max-width: 768px) {
+    .header-nav {
+        flex-direction: column;
+        gap: 16px;
+        margin-bottom: 32px;
+    }
+    
+    .logo-area {
+        width: 100%;
+        align-items: center;
+        text-align: center;
+    }
+    
+    .logo__image {
+        width: 160px;
+    }
+    
+    .logo-subtitle {
+        font-size: 13px;
+    }
+    
+    .user-info {
+        width: 100%;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .user-name {
+        font-size: 18px;
+    }
+    
+    .dropdown-btn {
+        padding: 4px;
+    }
+    
+    .login-btn {
+        width: 100%;
+        max-width: 200px;
+        margin: 0 auto;
+        height: 44px;
+        font-size: 16px;
+        padding: 12px 20px;
+    }
+    
+    .loading-placeholder {
+        width: 100%;
+        max-width: 200px;
+        height: 44px;
+        margin: 0 auto;
+    }
+    
+    /* Модальное окно профиля */
+    .modal {
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        border-radius: 20px 20px 0 0;
+        animation: slideUp 0.3s ease-out;
+    }
+    
+    .modal-user-name {
+        font-size: 18px;
+    }
+    
+    .modal-user-email {
+        font-size: 14px;
+        word-break: break-all;
+    }
+    
+    .modal-btn-profile,
+    .modal-btn-logout {
+        height: 48px;
+        font-size: 16px;
+    }
+}
+
+/* Очень маленькие экраны (до 480px) */
+@media (max-width: 480px) {
+    .logo__image {
+        width: 140px;
+    }
+    
+    .logo-subtitle {
+        font-size: 11px;
+    }
+    
+    .user-name {
+        font-size: 16px;
+    }
+    
+    .user-avatar {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .login-btn {
+        max-width: 180px;
+        height: 40px;
+        font-size: 14px;
+        padding: 10px 16px;
+    }
+}
+
+/* Анимация для мобильного меню */
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
 }

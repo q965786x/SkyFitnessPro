@@ -23,6 +23,6 @@ export {
     resetWorkoutProgress
 } from '../courses/coursesApi';
 
-export { default as apiClient } from '../api';
+export { default as apiClient } from './api';
 export { BASE_URL } from '../constants';
 export { storage } from '../storage';

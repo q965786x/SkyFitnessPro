@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Roboto } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -14,13 +14,20 @@ export const metadata: Metadata = {
   description: 'Онлайн-тренировки для занятий дома. Достигайте своих фитнес-целей с профессиональными программами.',
 };
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: true,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">     
+    <html lang="ru">     
       <body className={`${roboto.variable}`}>
         <AuthProvider>
           {children}

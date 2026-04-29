@@ -13,6 +13,7 @@
   text-align: center;
   z-index: 1;
   animation: fadeInUp 0.6s ease-out;
+  padding: 20px;
 }
 
 .title {
@@ -119,5 +120,25 @@
   
   .description {
     font-size: 14px;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    text-shadow: 0 0 30px rgba(182, 114, 255, 0.3);
+  }
+  50% {
+    text-shadow: 0 0 50px rgba(182, 114, 255, 0.5);
   }
 }

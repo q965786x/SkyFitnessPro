@@ -508,3 +508,261 @@
 .retry-button:hover {
   background-color: #a9d62a;
 }
+
+/* Планшетная версия (768px - 1024px) */
+@media (max-width: 1024px) {
+    .main-container {
+        width: 100%;
+    }
+    
+    .page-content {
+        padding: 32px 40px 48px 40px;
+    }
+    
+    .section-title {
+        font-size: 32px;
+        margin-bottom: 30px;
+    }
+    
+    .profile-card {
+        padding: 30px;
+        gap: 30px;
+    }
+    
+    .profile-name {
+        font-size: 28px;
+    }
+    
+    .courses-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 30px;
+    }
+    
+    .course-card {
+        width: 100%;
+        max-width: 360px;
+        margin: 0 auto;
+    }
+    
+    .card-image-wrapper {
+        width: 100%;
+        aspect-ratio: 360 / 325;
+    }
+    
+    .workout-modal {
+        width: 90%;
+        max-width: 460px;
+        height: auto;
+        max-height: 80vh;
+    }
+}
+
+/* Мобильная версия (до 768px) */
+@media (max-width: 768px) {
+    .main-container {
+        width: 100%;
+    }
+    
+    .page-content {
+        padding: 20px 16px 32px 16px;
+        min-height: auto;
+    }
+    
+    .section-title {
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+    
+    .profile-section {
+        margin-bottom: 40px;
+    }
+    
+    .profile-card {
+        flex-direction: column;
+        padding: 20px;
+        gap: 20px;
+        text-align: center;
+    }
+    
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto;
+    }
+    
+    .profile-name {
+        font-size: 24px;
+        margin-bottom: 12px;
+    }
+    
+    .profile-login {
+        font-size: 14px;
+        margin-bottom: 24px;
+        word-break: break-all;
+    }
+    
+    .logout-button {
+        width: 100%;
+        max-width: 200px;
+        margin: 0 auto;
+        height: 44px;
+        font-size: 16px;
+    }
+    
+    .courses-section {
+        margin-bottom: 32px;
+    }
+    
+    .courses-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+    
+    .course-card {
+        width: 100%;
+        max-width: 360px;
+        margin: 0 auto;
+    }
+    
+    .card-image-wrapper {
+        width: 100%;
+        aspect-ratio: 360 / 325;
+    }
+    
+    .card-content {
+        padding: 20px 16px;
+    }
+    
+    .card-title {
+        font-size: 22px;
+        margin-bottom: 16px;
+    }
+    
+    .card-buttons-row {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .btn-calendar,
+    .btn-time,
+    .btn-difficulty {
+        font-size: 12px;
+        padding: 8px 12px;
+    }
+    
+    .progress-label,
+    .progress-percent {
+        font-size: 14px;
+    }
+    
+    .continue-button {
+        height: 44px;
+        font-size: 16px;
+    }
+    
+    /* Модальное окно тренировок */
+    .workout-modal {
+        width: 95%;
+        max-height: 85vh;
+        border-radius: 20px;
+    }
+    
+    .workout-modal-title {
+        font-size: 24px;
+        padding: 20px 20px 10px 20px;
+        text-align: center;
+    }
+    
+    .workout-list {
+        padding: 20px 0;
+        max-height: 60vh;
+    }
+    
+    .workout-item {
+        padding: 12px 16px;
+    }
+    
+    .workout-title {
+        font-size: 18px;
+        margin-bottom: 6px;
+    }
+    
+    .workout-subtitle {
+        font-size: 14px;
+    }
+    
+    .workout-checkbox {
+        width: 20px;
+        height: 20px;
+        min-width: 20px;
+        margin-right: 12px;
+    }
+    
+    .workout-arrow {
+        font-size: 20px;
+    }
+    
+    .workout-start-button {
+        width: calc(100% - 40px);
+        margin: 0 20px 20px 20px;
+        height: 48px;
+        font-size: 16px;
+    }
+}
+
+/* Очень маленькие экраны (до 480px) */
+@media (max-width: 480px) {
+    .page-content {
+        padding: 16px 12px 24px 12px;
+    }
+    
+    .section-title {
+        font-size: 20px;
+        margin-bottom: 16px;
+    }
+    
+    .profile-card {
+        padding: 16px;
+    }
+    
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .profile-name {
+        font-size: 20px;
+    }
+    
+    .profile-login {
+        font-size: 12px;
+    }
+    
+    .card-title {
+        font-size: 20px;
+    }
+    
+    .btn-calendar span,
+    .btn-time span,
+    .btn-difficulty span {
+        font-size: 10px;
+    }
+    
+    .workout-modal-title {
+        font-size: 20px;
+        padding: 16px 16px 8px 16px;
+    }
+    
+    .workout-title {
+        font-size: 16px;
+    }
+    
+    .workout-subtitle {
+        font-size: 12px;
+    }
+    
+    .workout-start-button {
+        height: 44px;
+        font-size: 14px;
+    }
+}

@@ -1,4 +1,4 @@
-import { BASE_URL } from './constants';
+import { BASE_URL } from '../constants';
 import axios from 'axios';
 
 const apiClient = axios.create({
