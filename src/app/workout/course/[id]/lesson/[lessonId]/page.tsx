@@ -3,15 +3,17 @@
 import Header from '@/components/Header/Header';
 import styles from './page.module.css';
 import { useParams, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import { storage } from '@/services/storage';
+import { useState, useEffect, useCallback } from 'react';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { 
-    getCourseById, 
-    getWorkoutById, 
-    getWorkoutProgress, 
-    saveWorkoutProgress 
-} from '@/services/courses/coursesApi'; 
-import { useToast } from '@/hooks/useToast';
+    fetchWorkoutById, 
+    fetchWorkoutProgress as fetchWorkoutProgressThunk,
+    saveWorkout,
+    updateLocalProgress
+} from '@/store/slices/progressSlice';
+import { fetchCourseById } from '@/store/slices/coursesSlice';
+import { useToast } from '@/utils/useToast';
+import { storage } from '@/services/storage';
 
 type Exercise = {
     _id: string;
@@ -26,13 +28,31 @@ type WorkoutData = {
     exercises: Exercise[];
 };
 
+// Функция для проверки, завершена ли тренировка полностью
+const isWorkoutFullyCompleted = (progress: number[], exercises: Exercise[]): boolean => {
+    if (!progress || progress.length === 0 || exercises.length === 0) return false;
+    
+    // Проверяем, что каждое упражнение выполнено полностью (количество >= максимального)
+    return progress.every((count, index) => {
+        const exercise = exercises[index];
+        if (!exercise) return false;
+        return count >= exercise.quantity;
+    });
+};
+
 export default function LessonPage() {
     const { showSuccess, showError, showLoading, dismiss } = useToast();
     const params = useParams();
     const router = useRouter();
+    const dispatch = useAppDispatch();
     const courseId = params.id as string;
     const workoutId = params.lessonId as string;
 
+    const { currentCourse } = useAppSelector((state) => state.courses);
+    const workoutProgress = useAppSelector((state) => 
+        state.progress.workoutProgress[`${courseId}_${workoutId}`]
+    );
+    
     const [workout, setWorkout] = useState<WorkoutData | null>(null);
     const [courseTitle, setCourseTitle] = useState('');
     const [isLoading, setIsLoading] = useState(true);
@@ -41,17 +61,16 @@ export default function LessonPage() {
     const [progressData, setProgressData] = useState<number[]>([]);
     const [workoutCompleted, setWorkoutCompleted] = useState(false);
 
-    useEffect(() => {
-        const loadData = async () => {
+    // Загрузка данных тренировки
+    const loadWorkoutData = useCallback(async () => {
         try {
-            const token = storage.getToken();
-            if (!token) {
-            router.push('/workout/main');
-            return;
-            }
+            console.log('Loading workout:', workoutId);
+
+            // Загружаем данные тренировки через Redux
+            const workoutData = await dispatch(fetchWorkoutById(workoutId)).unwrap();
             
-            // Загружаем данные тренировки - теперь getWorkoutById возвращает данные напрямую
-            const workoutData = await getWorkoutById(workoutId);
+            console.log('Workout data received:', workoutData);
+            
             if (!workoutData) {
                 console.error('Тренировка не найдена');
                 setIsLoading(false);
@@ -59,43 +78,85 @@ export default function LessonPage() {
             }
             setWorkout(workoutData);
 
-            // Загружаем прогресс по тренировке - теперь getWorkoutProgress возвращает данные напрямую
             try {
-                const progress = await getWorkoutProgress(courseId, workoutId);
-                if (progress) {
-                    setProgressData(progress.progressData || new Array(workoutData.exercises.length).fill(0));
-                    setWorkoutCompleted(progress.workoutCompleted);
+                const result = await dispatch(fetchWorkoutProgressThunk({ courseId, workoutId })).unwrap();
+                const progress = result?.progress;
+                if (progress && progress.progressData) {
+                    setProgressData(progress.progressData);
+                    const allCompleted = isWorkoutFullyCompleted(progress.progressData, workoutData.exercises);
+                    setWorkoutCompleted(allCompleted);
                 } else {
-                    setProgressData(new Array(workoutData.exercises.length).fill(0));
+                    const initialProgress = new Array(workoutData.exercises.length).fill(0);
+                    setProgressData(initialProgress);
                     setWorkoutCompleted(false);
+                    console.log('Initialized progress with zeros:', initialProgress);
                 }
             } catch (error) {
-                // Если прогресса нет — создаем массив из нулей
                 console.log('Прогресс не найден, создаем новый:', error);
-                setProgressData(new Array(workoutData.exercises.length).fill(0));
+                const initialProgress = new Array(workoutData.exercises.length).fill(0);
+                setProgressData(initialProgress);
                 setWorkoutCompleted(false);
             }
 
-            // Загружаем название курса - теперь getCourseById возвращает данные напрямую
-            const courseData = await getCourseById(courseId);
-            if (courseData) {
-                setCourseTitle(courseData.nameRU);
+            if (!currentCourse || currentCourse._id !== courseId) {
+                const courseData = await dispatch(fetchCourseById(courseId)).unwrap();
+                if (courseData) {
+                    setCourseTitle(courseData.nameRU);
+                }
+            } else {
+                setCourseTitle(currentCourse.nameRU);
             }
-            
-            } catch (error) {
-                console.error('Ошибка загрузки:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+        } catch (error) {
+            console.error('Ошибка загрузки:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [dispatch, courseId, workoutId, currentCourse]);
 
-        loadData();
-    }, [courseId, workoutId, router]);
+    // Проверка авторизации через токен (более надёжно)
+    useEffect(() => {
+        const token = storage.getToken();
+        
+        if (!token) {
+            router.push('/workout/main');
+            return;
+        }
+        
+        loadWorkoutData();
+    }, [router, loadWorkoutData]);
+
+    // Синхронизация с Redux прогрессом
+    useEffect(() => {
+        if (workoutProgress && workout) {
+            console.log('Workout progress updated from Redux:', workoutProgress);
+            setProgressData(workoutProgress.progressData || []);
+            const allCompleted = isWorkoutFullyCompleted(
+                workoutProgress.progressData || [], 
+                workout.exercises
+            );
+            setWorkoutCompleted(allCompleted);
+        }
+    }, [workoutProgress, workout]);
 
     const handleCountChange = (index: number, value: number) => {
+        if (!workout) return;
+
         const newProgress = [...progressData];
-        newProgress[index] = value;
+        // Не позволяем превысить максимальное значение
+        const maxQuantity = workout?.exercises[index]?.quantity || 0;
+        newProgress[index] = Math.min(value, maxQuantity);
         setProgressData(newProgress);
+        
+        // Проверяем, завершена ли тренировка полностью
+        if (workout) {
+            const allCompleted = isWorkoutFullyCompleted(newProgress, workout.exercises);
+            dispatch(updateLocalProgress({
+                courseId,
+                workoutId,
+                progressData: newProgress,
+                workoutCompleted: allCompleted
+            }));
+        }
     };
 
     const handleSaveProgress = async () => {
@@ -104,26 +165,44 @@ export default function LessonPage() {
         const loadingToast = showLoading('Сохранение прогресса...');
         
         try {
-            await saveWorkoutProgress(courseId, workoutId, progressData);
+            // Проверяем, завершена ли тренировка полностью
+            const allCompleted = isWorkoutFullyCompleted(progressData, workout.exercises);
             
-            // Проверяем, завершена ли тренировка (все упражнения > 0)
-            const allCompleted = progressData.every(count => count > 0);
-            setWorkoutCompleted(allCompleted);
-            
-            // ОБНОВЛЯЕМ КЭШ ПРОГРЕССА В STORAGE
-            // Сохраняем информацию о том, что тренировка обновлена
+            console.log('Saving progress:', { courseId, workoutId, progressData, allCompleted });
+
+            // Сохраняем через Redux
+            await dispatch(saveWorkout({ 
+                courseId, 
+                workoutId, 
+                progressData 
+            })).unwrap();
+
+            setWorkoutCompleted(allCompleted);            
+            setIsModalOpen(false);
+            dismiss(loadingToast);
+
+            showSuccess('Прогресс успешно сохранен!');
+            setIsSuccessModalOpen(true);
+
+            // Сохраняем в localStorage
+            const key = `${courseId}_${workoutId}`;
             const updatedWorkouts = JSON.parse(localStorage.getItem('updatedWorkouts') || '{}');
-            updatedWorkouts[`${courseId}_${workoutId}`] = {
+            updatedWorkouts[key] = {
                 progressData,
                 workoutCompleted: allCompleted,
                 timestamp: Date.now()
             };
             localStorage.setItem('updatedWorkouts', JSON.stringify(updatedWorkouts));
+
+            // Устанавливаем флаг для обновления профиля
+            localStorage.setItem('returnToProfile', 'true');
             
-            setIsModalOpen(false);
-            dismiss(loadingToast);
-            showSuccess('Прогресс успешно сохранен!');
-            setIsSuccessModalOpen(true);            
+            // Принудительная перезагрузка страницы профиля через параметр
+            setTimeout(() => {
+                router.push('/profile');
+            }, 1500);
+            
+
         } catch (error) {
             dismiss(loadingToast);
             console.error('Ошибка сохранения прогресса:', error);
@@ -134,29 +213,27 @@ export default function LessonPage() {
     useEffect(() => {
         if (isSuccessModalOpen) {
             const timer = setTimeout(() => {
-            setIsSuccessModalOpen(false);
+                setIsSuccessModalOpen(false);
             }, 2000);
             
             return () => clearTimeout(timer);
         }
     }, [isSuccessModalOpen]);
 
-    useEffect(() => {
-        return () => {
-            // При уходе со страницы проверяем, нужно ли обновить профиль
-            const returnToProfile = localStorage.getItem('returnToProfile');
-            if (returnToProfile === 'true') {
-                // Флаг уже установлен, ничего не делаем
-                console.log('Будет обновлен профиль при возврате');
-            }
-        };
-    }, []);
-
     // Функция для вычисления процента выполнения упражнения
     const getProgressPercent = (current: number, max: number): number => {
         if (max === 0) return 0;
         return Math.round((current / max) * 100);
     };
+
+    console.log('Render state:', { 
+        isLoading, 
+        workoutName: workout?.name, 
+        progressData, 
+        exercisesCount: workout?.exercises.length,
+        workoutCompleted 
+    });
+   
 
     if (isLoading) {
         return (
@@ -176,11 +253,13 @@ export default function LessonPage() {
             <Header />
             <div className={styles['error']}>
                 <h2>Тренировка не найдена</h2>
+                <p>Workout ID: {workoutId}</p>
+                <p>Course ID: {courseId}</p>
                 <button 
-                    onClick={() => router.push(`/workout/course/${courseId}`)} 
+                    onClick={() => router.push(`/profile`)} 
                     className={styles['back-button']}
                 >
-                    Вернуться к курсу
+                    Вернуться в профиль
                 </button>
             </div>
             </div>

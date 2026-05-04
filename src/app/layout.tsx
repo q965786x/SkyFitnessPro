@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import { Roboto } from 'next/font/google';
 import './globals.css';
-import { AuthProvider } from '@/contexts/AuthContext';
+import ReduxProvider from '@/components/ReduxProvider/ReduxProvider';
 import ToastProvider from '@/components/ToastProvider/ToastProvider';
+
 
 const roboto = Roboto({
   variable: '--font-roboto',
@@ -29,10 +30,10 @@ export default function RootLayout({
   return (
     <html lang="ru">     
       <body className={`${roboto.variable}`}>
-        <AuthProvider>
+        <ReduxProvider>
           {children}
           <ToastProvider />
-        </AuthProvider>
+        </ReduxProvider>    
       </body>
     </html>
   );

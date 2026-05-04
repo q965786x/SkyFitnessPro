@@ -2,18 +2,19 @@
 
 import styles from './page.module.css';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { storage } from '@/services/storage';
+import { useEffect, useState } from 'react';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { openSigninModal } from '@/store/slices/uiSlice';
+import { sortCoursesByOrder } from '@/utils/courseSort';
+import { 
+  fetchAllCourses, 
+  fetchUserCourses 
+} from '@/store/slices/coursesSlice';
+import { logout } from '@/store/slices/authSlice';
+import CourseImage from '@/components/CourseImage/CourseImage';
 import SigninModal from '@/components/AuthModal/SigninModal';
 import SignupModal from '@/components/AuthModal/SignupModal';
-import { 
-  getAllCourses, 
-  getUserCourses 
-} from '@/services/courses/coursesApi';
-import { logoutUser } from '@/services/auth/authApi';
-import CourseImage from '@/components/CourseImage/CourseImage';
-import { sortCoursesByOrder } from '@/utils/courseSort';
 
 type Course = {
   _id: string;
@@ -28,7 +29,7 @@ type Course = {
   workouts: string[];
 };
 
-export default function MainPage() {
+{/* export default function MainPage() {
   const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
   const [userCoursesIds, setUserCoursesIds] = useState<string[]>([]);
@@ -120,7 +121,88 @@ export default function MainPage() {
   
   if (isLoading) {
     return <div className={styles.loading}>Загрузка...</div>;
+  } */}
+
+export default function MainPage() {
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  
+  const { allCourses, userCoursesIds, isLoading: coursesLoading } = useAppSelector((state) => state.courses);
+  const { isAuthorized, isLoading: authLoading } = useAppSelector((state) => state.auth);
+  
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+  // Загрузка данных - только один раз
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        await dispatch(fetchAllCourses()).unwrap();
+        
+        if (isAuthorized) {
+          await dispatch(fetchUserCourses()).unwrap();
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки:', error);
+      } finally {
+        setIsInitialLoading(false);
+      }
+    };
+
+    loadData();
+  }, [dispatch, isAuthorized]);
+    
+  // Сортируем курсы когда они загружаются
+  useEffect(() => {
+    if (allCourses.length > 0) {
+      const sortedCourses = sortCoursesByOrder(allCourses);
+      setCourses(sortedCourses);
+    }
+  }, [allCourses]);
+  
+  // Функция скролла наверх
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
+  // Функция handleLogout
+  const handleLogout = () => {
+    dispatch(logout());
+    router.push('/workout/main');
+  };
+
+  // При клике на карточку - переходим на страницу курса
+  const handleCardClick = (courseId: string) => {
+    router.push(`/workout/course/${courseId}`);
+  };
+
+  // Обработчик клика по иконке добавления
+  const handleIconClick = (e: React.MouseEvent, courseId: string) => {
+    e.stopPropagation();
+
+    localStorage.setItem('pendingCourseId', courseId);
+    
+    // Перенаправляем на страницу выбранного курса
+    router.push(`/workout/course/${courseId}`);
+  };
+
+  const isCourseAdded = (courseId: string) => userCoursesIds.includes(courseId);
+
+  // Обновление после успешного входа
+  const handleLoginSuccess = async () => {
+    await dispatch(fetchUserCourses()).unwrap();
+    router.refresh();
+  };
+
+  const isLoading = isInitialLoading || coursesLoading || authLoading;
+
+  if (isLoading) { // <- ИСПРАВЛЕНО: было isLoadingState, нужно isLoading
+    return <div className={styles.loading}>Загрузка...</div>;
   }
+
     
   return (
     <>
@@ -153,7 +235,7 @@ export default function MainPage() {
             ) : (
               <button 
                 className={styles['login-btn']} 
-                onClick={() => setIsSigninModalOpen(true)}
+                onClick={() => dispatch(openSigninModal())}
               >
                 Войти
               </button>
@@ -173,123 +255,107 @@ export default function MainPage() {
                 />
             </div>
           </div>
-
           
-          <div className={styles['cards']}>
-            {courses.length === 0 ? (
-              <div className={styles['no-courses']}>
-                <p>Нет доступных курсов</p>
-              </div>
-              ) : (courses.map((course) => {
-                const added = isAuthorized && isCourseAdded(course._id);
-                return (
-                  <div 
-                    key={course._id} 
-                    className={styles.card}
-                    onClick={() => handleCardClick(course._id)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <div className={styles['card-image-wrapper']}>
-                      <CourseImage 
-                        nameEN={course.nameEN}
-                        nameRU={course.nameRU}
-                        type="card"
-                        width={360}
-                        height={325}
-                        className={styles['card-image']}
-                      />
-                      
-                      <div 
-                        className={`${styles['add-icon-wrapper']} ${added ? styles['disabled'] : ''}`}
-                        onClick={(e) => handleIconClick(e, course._id)}
-                      >
-                        {added ? (
-                          // Иконка галочки для добавленных курсов
-                          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M16.6667 5L7.5 14.1667L3.33333 10" stroke="#4CAF50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        ) : (
-                          // Иконка плюса для недобавленных курсов
-                          <Image 
-                            width={32}
-                            height={32}
-                            className={styles['add-icon-image']}
-                            src="/img/Add-icon.png"
-                            alt="add-icon"
-                          />
-                        )}
-                      </div>
-                    </div>            
-                    <div className={styles['card-content']}>
-                      <div className={styles['card-title']}>{course.nameRU}</div>
-                      <div className={styles['card-buttons-wrapper']}>
-                        <div className={styles['card-buttons-row']}>
-                          <button className={styles['btn-calendar']}>
-                            <Image 
-                              width={18} 
-                              height={18} 
-                              src="/img/calendar-icon.png" 
-                              alt="calendar" 
-                            />
-                            <span>{course.durationInDays || 25} дней</span>
-                          </button>
-                          <button className={styles['btn-time']}>
-                            <Image 
-                              width={18} 
-                              height={18} 
-                              src="/img/time-icon.png" 
-                              alt="time" 
-                            />
-                            <span>
-                              {course.dailyDurationInMinutes?.from || 20}-{course.dailyDurationInMinutes?.to || 50} мин/день
-                            </span>
-                          </button>
-                        </div>
-                        <button className={styles['btn-difficulty']}>
-                          <Image 
-                            width={18} 
-                            height={18} 
-                            src="/img/diagram-icon.png" 
-                            alt="difficulty" />
-                          <span>Сложность: {course.difficulty || 'средний'}</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          {/* Кнопка "Вверх" */}
-          <div className={styles['footer-btn']}>
-              <button className={styles['scroll-to-top']} onClick={scrollToTop}>
-                <span>Вверх</span>
-                <span className={styles['arrow-up']}>↑</span>
-              </button>
+        <div className={styles['cards']}>
+          {courses.length === 0 ? (
+            <div className={styles['no-courses']}>
+              <p>Нет доступных курсов</p>
             </div>
+        ) : (courses.map((course) => {
+          const added = isAuthorized && isCourseAdded(course._id);
+          return (
+            <div 
+              key={course._id} 
+              className={styles.card}
+              onClick={() => handleCardClick(course._id)}
+              style={{ cursor: 'pointer' }}
+            >
+              <div className={styles['card-image-wrapper']}>
+                <CourseImage 
+                  nameEN={course.nameEN}
+                  nameRU={course.nameRU}
+                  type="card"
+                  width={360}
+                  height={325}
+                  className={styles['card-image']}
+                  priority={true}
+                />
+                      
+                <div 
+                  className={`${styles['add-icon-wrapper']} ${added ? styles['disabled'] : ''}`}
+                  onClick={(e) => handleIconClick(e, course._id)}
+                >
+                  {added ? (
+                    // Иконка галочки для добавленных курсов
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M16.6667 5L7.5 14.1667L3.33333 10" stroke="#4CAF50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  ) : (
+                    // Иконка плюса для недобавленных курсов
+                    <Image 
+                      width={32}
+                      height={32}
+                      className={styles['add-icon-image']}
+                      src="/img/Add-icon.png"
+                      alt="add-icon"
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div className={styles['card-content']}>
+                <div className={styles['card-title']}>{course.nameRU}</div>
+                <div className={styles['card-buttons-wrapper']}>
+                  <div className={styles['card-buttons-row']}>
+                    <button className={styles['btn-calendar']}>
+                      <Image 
+                        width={18} 
+                        height={18} 
+                        src="/img/calendar-icon.png" 
+                        alt="calendar" 
+                      />
+                      <span>{course.durationInDays || 25} дней</span>
+                    </button>
+                    <button className={styles['btn-time']}>
+                      <Image 
+                        width={18} 
+                        height={18} 
+                        src="/img/time-icon.png" 
+                        alt="time" 
+                      />
+                      <span>
+                        {course.dailyDurationInMinutes?.from || 20}-{course.dailyDurationInMinutes?.to || 50} мин/день
+                      </span>
+                    </button>
+                  </div>
+                    <button className={styles['btn-difficulty']}>
+                      <Image 
+                        width={18} 
+                        height={18} 
+                        src="/img/diagram-icon.png" 
+                        alt="difficulty" />
+                      <span>Сложность: {course.difficulty || 'средний'}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Кнопка "Вверх" */}
+      <div className={styles['footer-btn']}>
+            <button className={styles['scroll-to-top']} onClick={scrollToTop}>
+              <span>Вверх</span>
+              <span className={styles['arrow-up']}>↑</span>
+            </button>
           </div>
         </div>
+      </div>
 
-        <SigninModal 
-          isOpen={isSigninModalOpen}
-          onClose={() => setIsSigninModalOpen(false)}
-          onSwitchToSignup={() => {
-            setIsSigninModalOpen(false);
-            setIsSignupModalOpen(true);
-          }}
-          onLoginSuccess={handleLoginSuccess}
-        />
-
-        <SignupModal 
-          isOpen={isSignupModalOpen}
-          onClose={() => setIsSignupModalOpen(false)}
-          onSwitchToSignin={() => {
-            setIsSignupModalOpen(false);
-            setIsSigninModalOpen(true);
-          }}
-          onLoginSuccess={handleLoginSuccess}
-        />
+      <SigninModal onLoginSuccess={handleLoginSuccess} />
+      <SignupModal onLoginSuccess={handleLoginSuccess} />
     </>
   );
 }

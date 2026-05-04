@@ -5,17 +5,19 @@ import classNames from 'classnames';
 import Image from 'next/image';
 import { ChangeEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { storage } from '@/services/storage';
 import Modal from '../Modal/Modal';
-import { 
-    getMe, 
-    loginUser, 
-    registerUser 
-} from '@/services/auth/authApi';
-import { addCourseToUser } from '@/services/courses/coursesApi';
-import { useToast } from '@/hooks/useToast';
+import { useToast } from '@/utils/useToast';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { addCourse } from '@/store/slices/coursesSlice';
+import { closeAuthModals, openSigninModal } from '@/store/slices/uiSlice';
+import { register, clearError } from '@/store/slices/authSlice';
+import { store } from '@/store';
 
-type SignupModalProps = {
+// import { storage } from '@/services/storage';
+// import { getMe, loginUser, registerUser } from '@/services/auth/authApi';
+// import { addCourseToUser } from '@/services/courses/coursesApi';
+
+{/* type SignupModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onSwitchToSignin: () => void;
@@ -169,10 +171,166 @@ export default function SignupModal({ isOpen, onClose, onSwitchToSignin, onLogin
         } finally {
             setIsLoading(false);
         }
-    };    
+    }; */}   
+
+type SignupModalProps = {
+  onLoginSuccess: () => void;
+}
+
+export default function SignupModal({ onLoginSuccess }: SignupModalProps) {
+    const router = useRouter();
+    const dispatch = useAppDispatch();
+    const { showSuccess, showError, showLoading, showInfo, dismiss } = useToast();
+    
+    const { isLoading: isAuthLoading, error: authError } = useAppSelector((state) => state.auth);
+    const isOpen = useAppSelector((state) => state.ui.isSignupModalOpen);
+    
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [hasError, setHasError] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    const onChangeEmail = (e: ChangeEvent<HTMLInputElement>) => {
+        setEmail(e.target.value);
+        setErrorMessage('');
+        setHasError(false);
+        if (authError) {
+            dispatch(clearError());
+        }
+    };
+
+    const onChangePassword = (e: ChangeEvent<HTMLInputElement>) => {
+        setPassword(e.target.value);
+        setErrorMessage('');
+        setHasError(false);
+        if (authError) {
+            dispatch(clearError());
+        }
+    };
+
+    const onChangeConfirmPassword = (e: ChangeEvent<HTMLInputElement>) => {
+        setConfirmPassword(e.target.value);
+        setErrorMessage('');
+        setHasError(false);
+        if (authError) {
+            dispatch(clearError());
+        }
+    };
+
+    const validatePassword = (pwd: string): string | null => {
+        if (pwd.length < 6) {
+            return 'Пароль должен содержать не менее 6 символов';
+        }
+        
+        const specialChars = pwd.match(/[!@#$%^&*(),.?":{}|<>]/g);
+        if (!specialChars || specialChars.length < 2) {
+            return 'Пароль должен содержать не менее 2 спецсимволов';
+        }
+        
+        if (!/[A-Z]/.test(pwd)) {
+            return 'Пароль должен содержать как минимум одну заглавную букву';
+        }
+        
+        return null;
+    };
+    
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setHasError(false);
+        setErrorMessage('');
+
+        if (!emailRegex.test(email)) {
+            setHasError(true);
+            setErrorMessage('Введите корректный email');
+            return;
+        }
+
+        if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
+            setHasError(true);
+            setErrorMessage('Заполните все поля');
+            return;
+        } 
+        
+        if (password.trim() !== confirmPassword.trim()) {
+            setHasError(true);
+            setErrorMessage('Пароли не совпадают');
+            return;
+        } 
+
+        const passwordError = validatePassword(password);
+        if (passwordError) {
+            setHasError(true);
+            setErrorMessage(passwordError);
+            return;
+        }
+
+        const loadingToast = showLoading('Регистрация...');
+        
+        try {
+            const result = await dispatch(register({ email, password })).unwrap();
+            dismiss(loadingToast);
+            
+            if (result) {
+                showSuccess('Регистрация прошла успешно!');
+                
+                // Проверяем отложенный курс
+            const pendingCourseId = localStorage.getItem('pendingCourseId');
+            if (pendingCourseId && pendingCourseId !== 'null') {
+                localStorage.removeItem('pendingCourseId');
+                
+                // ДОБАВЛЯЕМ ПРОВЕРКУ: добавлен ли уже курс
+                const { userCoursesIds } = store.getState().courses;
+                
+                if (!userCoursesIds.includes(pendingCourseId)) {
+                    await dispatch(addCourse(pendingCourseId)).unwrap();
+                    showSuccess('Курс успешно добавлен!');
+                } else {
+                    // Курс уже добавлен, просто показываем уведомление
+                    showInfo('Этот курс уже добавлен в ваш профиль');
+                }
+            }
+                
+                onLoginSuccess();
+                dispatch(closeAuthModals());
+                router.refresh();
+            }
+        } catch {
+            dismiss(loadingToast);
+            setHasError(true);
+            setErrorMessage(authError || 'Ошибка регистрации. Попробуйте позже');
+            showError(authError || 'Ошибка регистрации. Попробуйте позже');
+        }
+    };
+
+
+    const handleClose = () => {
+        dispatch(closeAuthModals());
+        setEmail('');
+        setPassword('');
+        setConfirmPassword('');
+        setHasError(false);
+        setErrorMessage('');
+        dispatch(clearError());
+    };
+
+    const handleSwitchToSignin = () => {
+        dispatch(closeAuthModals());
+        dispatch(openSigninModal());
+        setEmail('');
+        setPassword('');
+        setConfirmPassword('');
+        setHasError(false);
+        setErrorMessage('');
+        dispatch(clearError());
+    };
+
+    if (!isOpen) return null;
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose}>
+        <Modal isOpen={isOpen} onClose={handleClose}>
             <div className={hasError ? styles.modal__blockWithError : styles.modal__block}>
                 <form className={styles.modal__form} onSubmit={handleSubmit}>
                     <div className={styles.modal__logo}>
@@ -192,7 +350,7 @@ export default function SignupModal({ isOpen, onClose, onSwitchToSignin, onLogin
                         placeholder="Эл.почта"
                         value={email}
                         onChange={onChangeEmail}
-                        disabled={isLoading}
+                        disabled={isAuthLoading}
                     />
                     <input
                         className={styles.modal__input}
@@ -202,7 +360,7 @@ export default function SignupModal({ isOpen, onClose, onSwitchToSignin, onLogin
                         placeholder="Пароль"
                         value={password}
                         onChange={onChangePassword}
-                        disabled={isLoading}
+                        disabled={isAuthLoading}
                     />
                     <input
                         className={styles.modal__input}
@@ -212,25 +370,25 @@ export default function SignupModal({ isOpen, onClose, onSwitchToSignin, onLogin
                         placeholder="Повторите пароль"
                         value={confirmPassword}
                         onChange={onChangeConfirmPassword}
-                        disabled={isLoading}
+                        disabled={isAuthLoading}
                     />
-                    {hasError && (
+                    {(hasError || authError) && (
                         <div className={styles.errorContainer}>
-                            {errorMessage}
+                            {errorMessage || authError}
                         </div>
                     )}
                     <button 
                         type="submit" 
                         className={styles.modal__btnSignupEnt}
-                        disabled={isLoading}
+                        disabled={isAuthLoading}
                     >
-                        {isLoading ? 'Регистрация...' : 'Зарегистрироваться'}
+                        {isAuthLoading ? 'Регистрация...' : 'Зарегистрироваться'}
                     </button>
                     <button 
                         type="button"
                         className={styles.modal__btnEnter}
-                        onClick={onSwitchToSignin}
-                        disabled={isLoading}
+                        onClick={handleSwitchToSignin}
+                        disabled={isAuthLoading}
                     >
                         Войти
                     </button>

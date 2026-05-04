@@ -5,34 +5,35 @@ import styles from './page.module.css';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { storage } from '@/services/storage';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { openSigninModal } from '@/store/slices/uiSlice';
+import { 
+    addCourse, 
+    fetchCourseById, 
+    fetchUserCourses 
+} from '@/store/slices/coursesSlice';
+import { useToast } from '@/utils/useToast';
+import CourseImage from '@/components/CourseImage/CourseImage';
 import SigninModal from '@/components/AuthModal/SigninModal';
 import SignupModal from '@/components/AuthModal/SignupModal';
-import { 
-    addCourseToUser, 
-    getCourseById, 
-    getUserCourses
-} from '@/services/courses/coursesApi';
-import { AxiosError } from 'axios';
-import { useToast } from '@/hooks/useToast';
-import CourseImage from '@/components/CourseImage/CourseImage';
 
+// import { storage } from '@/services/storage';
+// import { addCourseToUser, getCourseById, getUserCourses } from '@/services/courses/coursesApi';
+// import { AxiosError } from 'axios';
 
+{/* type Course = {
+   _id: string;
+   nameRU: string;
+   nameEN: string;
+   description: string;
+   directions: string[];
+   fitting: string[];
+   difficulty: string;
+   durationInDays: number;
+   dailyDurationInMinutes: { from: number; to: number };
+   workouts: string[]; */}
 
-type Course = {
-  _id: string;
-  nameRU: string;
-  nameEN: string;
-  description: string;
-  directions: string[];
-  fitting: string[];
-  difficulty: string;
-  durationInDays: number;
-  dailyDurationInMinutes: { from: number; to: number };
-  workouts: string[];
-};
-
-export default function CoursePage() {
+{/* export default function CoursePage() {
     const { showSuccess, showError, showLoading, dismiss } = useToast();
     const params = useParams();
     const router = useRouter();
@@ -121,9 +122,72 @@ export default function CoursePage() {
         setIsAuthorized(!!token);
         // Перезагружаем страницу, чтобы обновить состояние
         router.refresh();
+    }; */}
+
+export default function CoursePage() {
+    const { showSuccess, showError, showLoading, dismiss } = useToast();
+    const params = useParams();
+    const router = useRouter();
+    const dispatch = useAppDispatch();
+    const courseId = params.id as string;
+    
+    const { currentCourse, userCoursesIds, isLoading: coursesLoading } = useAppSelector((state) => state.courses);
+    const { isAuthorized } = useAppSelector((state) => state.auth);
+    
+    const [isAdding, setIsAdding] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const loadCourse = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            await dispatch(fetchCourseById(courseId)).unwrap();
+        } catch (error) {
+            console.error('Ошибка загрузки курса:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [courseId, dispatch]);
+
+    useEffect(() => {
+        loadCourse();
+    }, [loadCourse]);
+
+    const handleAddCourse = async () => {
+        if (!isAuthorized) {
+            localStorage.setItem('pendingCourseId', courseId);
+            dispatch(openSigninModal());
+            return;
+        }
+
+        setIsAdding(true);
+        const loadingToast = showLoading('Добавление курса...');
+
+        try {
+            await dispatch(addCourse(courseId)).unwrap();
+            await dispatch(fetchUserCourses()).unwrap();
+            
+            dismiss(loadingToast);
+            showSuccess('Курс успешно добавлен!');
+
+            router.push(`/workout/course/${courseId}`);
+            router.refresh();
+        } catch (error) {
+            dismiss(loadingToast);
+            console.error('Ошибка добавления курса:', error);
+            showError('Не удалось добавить курс');
+        } finally {
+            setIsAdding(false);
+        }
     };
 
-    if (isLoading) {
+    const updateAuthState = async () => {
+        await dispatch(fetchUserCourses()).unwrap();
+        router.refresh();
+    };
+
+    const isCourseAdded = userCoursesIds.includes(courseId);
+
+    if (isLoading || coursesLoading) {
         return (
             <div className={styles['main-container']}>
                 <div className={styles['page-content']}>
@@ -136,7 +200,7 @@ export default function CoursePage() {
         );
     }
 
-    if (!course) {
+    if (!currentCourse) {
         return (
             <div className={styles['main-container']}>
                 <div className={styles['page-content']}>
@@ -159,14 +223,14 @@ export default function CoursePage() {
         <>
             <div className={styles['main-container']}>
                 <div className={styles['page-content']}>
-                    <Header onLoginClick={() => setIsSigninModalOpen(true)} />
+                    <Header />
 
                     <div className={styles['course-container']}>
                         {/* Баннер курса */}
                         <div className={styles['course-image-wrapper']}>
                             <CourseImage
-                                nameEN={course.nameEN}
-                                nameRU={course.nameRU}
+                                nameEN={currentCourse.nameEN}
+                                nameRU={currentCourse.nameRU}
                                 type="banner"
                                 width={1160}
                                 height={310}
@@ -178,7 +242,7 @@ export default function CoursePage() {
                         {/* "Подойдет для вас, если:" */}
                         <div className={styles['section-label']}>Подойдет для вас, если:</div>
                         <div className={styles['features-row']}>
-                            {course.fitting && course.fitting.map((item, index) => (
+                            {currentCourse.fitting && currentCourse.fitting.map((item, index) => (
                                 <div key={index} className={styles['feature-card']}>
                                     <div className={styles['feature-content']}>
                                         <div className={styles['feature-number']}>{index + 1}</div>
@@ -193,7 +257,7 @@ export default function CoursePage() {
                         <div className={styles['directions-wrapper']}>
                             <h2 className={styles['directions-heading']}>Направления</h2>
                             <div className={styles['directions-full-block']}>
-                                {course.directions && course.directions.map((direction, index) => (
+                                {currentCourse.directions && currentCourse.directions.map((direction, index) => (
                                     <span 
                                         key={index} 
                                         className={styles['direction-item']}
@@ -236,9 +300,17 @@ export default function CoursePage() {
                                     {!isAuthorized ? (
                                         <button 
                                             className={styles['journey-button']}
-                                            onClick={() => setIsSigninModalOpen(true)}
+                                            onClick={() => dispatch(openSigninModal())}
                                         >
                                             Войдите, чтобы добавить курс
+                                        </button>
+                                    ) : isCourseAdded ? (
+                                        <button 
+                                            className={styles['journey-button']}
+                                            disabled={true}
+                                            style={{ opacity: 0.6, cursor: 'not-allowed' }}
+                                        >
+                                            Курс уже добавлен
                                         </button>
                                     ) : (
                                         <button 
@@ -263,31 +335,13 @@ export default function CoursePage() {
                                     />
                                 </div>                       
                             </div>
-                        </div>
-
-                        {/* Модальные окна авторизации */}
-                        <SigninModal 
-                            isOpen={isSigninModalOpen}
-                            onClose={() => setIsSigninModalOpen(false)}
-                            onSwitchToSignup={() => {
-                                setIsSigninModalOpen(false);
-                                setIsSignupModalOpen(true);
-                            }}
-                            onLoginSuccess={updateAuthState}
-                        />
-
-                        <SignupModal 
-                            isOpen={isSignupModalOpen}
-                            onClose={() => setIsSignupModalOpen(false)}
-                            onSwitchToSignin={() => {
-                                setIsSignupModalOpen(false);
-                                setIsSigninModalOpen(true);
-                            }}
-                            onLoginSuccess={updateAuthState}
-                        />
+                        </div>                        
                     </div>
                 </div>
             </div>
+            {/* Модальные окна авторизации */}
+            <SigninModal onLoginSuccess={updateAuthState} />
+            <SignupModal onLoginSuccess={updateAuthState} />
         </>
     );
 }

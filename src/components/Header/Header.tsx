@@ -4,20 +4,23 @@ import styles from './header.module.css';
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { storage } from '@/services/storage';
-import { getMe, logoutUser } from '@/services/auth/authApi';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { checkAuth, logout } from '@/store/slices/authSlice';
+import { openSigninModal } from '@/store/slices/uiSlice';
 
+// import { storage } from '@/services/storage';
+// import { getMe, logoutUser } from '@/services/auth/authApi';
 
-type UserProps = {
+{/* type UserProps = {
     name: string;
     email: string;
 };
 
 type HeaderProps = {
     onLoginClick?: () => void; // Добавляем пропс для открытия модального окна
-};
+}; */}
 
-export default function Header({ onLoginClick }: HeaderProps) {
+{/* export default function Header({ onLoginClick }: HeaderProps) { 
     const router = useRouter();
     const pathname = usePathname();
     const [user, setUser] = useState<UserProps | null>(null);
@@ -30,9 +33,9 @@ export default function Header({ onLoginClick }: HeaderProps) {
     // Скрываем только на странице профиля и на странице урока
     const isProfilePage = pathname === '/profile';
     const isLessonPage = pathname?.includes('/lesson/');
-    const hideSubtitle = isProfilePage || isLessonPage;
+    const hideSubtitle = isProfilePage || isLessonPage; */}
 
-    useEffect(() => {
+    {/* useEffect(() => {
         const checkAuth = async () => {
             const token = storage.getToken();
             if (token) {
@@ -60,11 +63,10 @@ export default function Header({ onLoginClick }: HeaderProps) {
         };
             
         checkAuth();
-    }, []);
-
+    }, []); */}
 
     // Закрытие модального окна при клике вне его
-    useEffect(() => {
+    {/* useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (
                 isModalOpen &&
@@ -79,9 +81,9 @@ export default function Header({ onLoginClick }: HeaderProps) {
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isModalOpen]);
+    }, [isModalOpen]); */}
 
-    const handleLogout = () => {
+        {/* const handleLogout = () => {
         logoutUser();
         setUser(null);
         setIsModalOpen(false);
@@ -109,7 +111,63 @@ export default function Header({ onLoginClick }: HeaderProps) {
         } else {
             router.push('/workout/main');
         }
+    }; */}
+
+export default function Header() {
+    const router = useRouter();
+    const pathname = usePathname();
+    const dispatch = useAppDispatch();
+    const { user, isAuthorized, isLoading } = useAppSelector((state) => state.auth);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const modalRef = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+
+    const isProfilePage = pathname === '/profile';
+    const isLessonPage = pathname?.includes('/lesson/');
+    const hideSubtitle = isProfilePage || isLessonPage;    
+
+    useEffect(() => {
+        dispatch(checkAuth());
+    }, [dispatch]);    
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                isModalOpen &&
+                modalRef.current &&
+                !modalRef.current.contains(event.target as Node) &&
+                buttonRef.current &&
+                !buttonRef.current.contains(event.target as Node)
+            ) {
+                setIsModalOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isModalOpen]);
+    
+    const handleLogout = () => {
+        dispatch(logout());
+        setIsModalOpen(false);
+        router.push('/workout/main');
     };
+
+    const handleProfile = () => {
+        setIsModalOpen(false);
+        router.push('/profile');
+    };
+
+    const handleLoginClick = () => {
+        const pathParts = pathname?.split('/');
+        if (pathParts && pathParts[1] === 'workout' && pathParts[2] === 'course' && pathParts[3]) {
+            localStorage.setItem('pendingCourseId', pathParts[3]);
+        } else {
+            localStorage.removeItem('pendingCourseId');
+        }
+        dispatch(openSigninModal());
+    };
+
 
     if (isLoading) {
         return (
@@ -135,7 +193,7 @@ export default function Header({ onLoginClick }: HeaderProps) {
     }
 
     
-    if (!user) {
+    if (!isAuthorized || !user) {
         return (
             <div className={styles['header-nav']}>
                 <div className={styles['logo-area']}>

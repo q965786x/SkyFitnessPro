@@ -7,6 +7,8 @@ import {
 import { BASE_URL } from "../constants";
 import { storage } from "../storage";
 
+const pendingRequests = new Map();
+
 // Вспомогательная функция для авторизованных fetch-запросов
 async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
     const token = storage.getToken();
@@ -15,20 +17,41 @@ async function authFetch(url: string, options: RequestInit = {}): Promise<Respon
         throw new Error('No token found');
     }
     
-    const response = await fetch(`${BASE_URL}${url}`, {
+    const cacheKey = `${url}_${JSON.stringify(options)}`;
+    
+    // Если такой запрос уже выполняется, возвращаем тот же промис
+    if (pendingRequests.has(cacheKey)) {
+        return pendingRequests.get(cacheKey);
+    }
+    
+    const promise = fetch(`${BASE_URL}${url}`, {
         ...options,
         headers: {
             'Authorization': `Bearer ${token}`,
             ...options.headers,
         },
+    }).then(async (response) => {
+        if (!response.ok) {
+            // Не читаем response.json() здесь, чтобы не "загрязнять" body
+            let errorMessage = `HTTP ${response.status}`;
+            try {
+                 // Клонируем response перед чтением
+                const clonedResponse = response.clone();
+                const error = await clonedResponse.json();
+                errorMessage = error.message || error.error || errorMessage;
+            } catch {
+            // Не удалось прочитать JSON - игнорируем
+            }
+            throw new Error(errorMessage);
+        }
+        return response;
+    }).finally(() => {
+        // Удаляем из кэша через 100мс
+        setTimeout(() => pendingRequests.delete(cacheKey), 100);
     });
     
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: 'Request failed' }));
-        throw new Error(error.message || error.error || `HTTP ${response.status}`);
-    }
-    
-    return response;
+    pendingRequests.set(cacheKey, promise);
+    return promise;
 }
 
 // Вспомогательная функция для публичных fetch-запросов (без токена)
@@ -90,7 +113,17 @@ export const getWorkoutById = async (workoutId: string): Promise<WorkoutType | n
     console.log('Getting workout:', workoutId);
     try {
         const response = await authFetch(`/workouts/${workoutId}`);
-        const data = await response.json();
+        
+        // Клонируем response перед чтением, чтобы избежать проблем
+        const clonedResponse = response.clone();
+        const text = await clonedResponse.text();
+
+        if (!text) {
+            console.error('Empty response body');
+            return null;
+        }
+        
+        const data = JSON.parse(text);
         
         if (data && data._id) {
             return data;
@@ -142,6 +175,15 @@ export const addCourseToUser = async (courseId: string): Promise<{ message: stri
         
         return data;
     } catch (error) {
+        // Проверяем тип error и извлекаем сообщение
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        
+        // Проверяем, не ошибка ли это "курс уже добавлен"
+        if (errorMessage === 'Курс уже был добавлен!') {
+            console.log('Course already added, skipping');
+            return { message: 'Курс уже добавлен' };
+        }
+        
         console.error('Error adding course:', error);
         throw error;
     }
@@ -162,6 +204,15 @@ export const deleteCourseFromUser = async (courseId: string): Promise<{ message:
         
         return data;
     } catch (error) {
+        // Проверяем, не ошибка ли это "курс не был добавлен"
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage === 'У пользователя не был добавлен этот курс!') {
+            console.log('Course was not in user list, removing from local storage anyway');
+            // Всё равно удаляем из localStorage
+            const currentCourses = storage.getUserCoursesIds();
+            storage.setUserCoursesIds(currentCourses.filter(id => id !== courseId));
+            return { message: 'Курс удалён из локального списка' };
+        }
         console.error('Ошибка удаления курса:', error);
         throw error;
     }
@@ -187,9 +238,14 @@ export const getCourseWorkouts = async (courseId: string): Promise<WorkoutType[]
 // GET /api/fitness/users/me/progress?courseId={courseId}&workoutId={workoutId} (требует токен)
 export const getWorkoutProgress = async (courseId: string, workoutId: string): Promise<WorkoutProgressType | null> => {
     console.log('Getting workout progress:', { courseId, workoutId });
+
     try {
         const response = await authFetch(`/users/me/progress?courseId=${courseId}&workoutId=${workoutId}`);
-        const data = await response.json();
+        
+        // Клонируем response перед чтением
+        const clonedResponse = response.clone();
+        const data = await clonedResponse.json();
+        
         return data;
     } catch (error) {
         console.error('Ошибка загрузки прогресса тренировки:', error);
@@ -220,7 +276,10 @@ export const saveWorkoutProgress = async (courseId: string, workoutId: string, p
             method: 'PATCH',
             body: JSON.stringify({ progressData }),
         });
-        const data = await response.json();
+
+        const clonedResponse = response.clone();
+        const data = await clonedResponse.json();
+
         return data;
     } catch (error) {
         console.error('Ошибка сохранения прогресса:', error);
@@ -252,7 +311,10 @@ export const getUserCourses = async (): Promise<string[]> => {
 
     try {
         const response = await authFetch('/users/me');
-        const data = await response.json();
+
+        // Клонируем response перед чтением
+        const clonedResponse = response.clone();
+        const data = await clonedResponse.json();
         
         // Извлекаем курсы из поля user или напрямую
         const userData = data.user || data;

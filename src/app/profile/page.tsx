@@ -3,20 +3,28 @@
 import Header from "@/components/Header/Header";
 import styles from './page.module.css';
 import Image from 'next/image';
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { storage } from '@/services/storage';
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { logout } from "@/store/slices/authSlice";
 import { 
-    deleteCourseFromUser, 
-    getAllCourses, 
-    getUserCourses, 
-    getWorkoutProgress,
-    getCourseWorkouts    
- } from "@/services/courses/coursesApi";
-import { getMe, logoutUser } from "@/services/auth/authApi";
-import { useToast } from "@/hooks/useToast";
+    fetchAllCourses, 
+    fetchUserCourses, 
+    deleteCourse,
+    fetchCourseWorkouts 
+} from "@/store/slices/coursesSlice";
+import { updateLocalProgress } from '@/store/slices/progressSlice';
+
 import CourseImage from "@/components/CourseImage/CourseImage";
 import { sortCoursesByOrder } from "@/utils/courseSort";
+import { useToast } from "@/utils/useToast";
+import { resetCourseProgress } from '@/services/api/coursesApi';
+
+type SavedWorkoutProgress = {
+    progressData: number[];
+    workoutCompleted: boolean;
+    timestamp: number;
+}
 
 type CourseWithProgress = {
   _id: string;
@@ -39,124 +47,73 @@ type Workout = {
 export default function ProfilePage() {
     const { showSuccess, showError, showLoading, dismiss } = useToast();
     const router = useRouter();
-    const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+    const dispatch = useAppDispatch();
+    
+    const { user, isAuthorized } = useAppSelector((state) => state.auth);
+    const { allCourses, userCoursesIds, isLoading: coursesLoading, courseWorkouts } = useAppSelector((state) => state.courses);
+    const workoutProgress = useAppSelector((state) => state.progress.workoutProgress);
+    
     const [courses, setCourses] = useState<CourseWithProgress[]>([]);
     const [isLoading, setIsLoading] = useState(true); 
     const [error, setError] = useState<string | null>(null);  
     const [selectedCourse, setSelectedCourse] = useState<CourseWithProgress | null>(null);
     const [isWorkoutModalOpen, setIsWorkoutModalOpen] = useState(false);
-    const [courseWorkouts, setCourseWorkouts] = useState<Record<string, Workout[]>>({});
-    const [workoutsProgress, setWorkoutsProgress] = useState<Record<string, Record<string, boolean>>>({});
-    
-    // ДОБАВЛЯЕМ ФЛАГ ДЛЯ ОТСЛЕЖИВАНИЯ ОБНОВЛЕНИЙ
-    const [refreshKey, setRefreshKey] = useState(0);
+    const [isLoadingWorkouts, setIsLoadingWorkouts] = useState(false);
+    const [workoutsCompleted, setWorkoutsCompleted] = useState<Record<string, Record<string, boolean>>>({});
 
-    // ФУНКЦИЯ ДЛЯ ОБНОВЛЕНИЯ ДАННЫХ (будем вызывать после возврата со страницы тренировки)
-    const refreshProfileData = useCallback(() => {
-        setRefreshKey(prev => prev + 1);
-    }, []);
-    
-    // Загрузка статуса тренировок
-    const loadWorkoutsStatus = useCallback(async (courseId: string, workouts: Workout[]) => {
-        try {
-            const statusMap: Record<string, boolean> = {};
+    // Флаг для предотвращения множественных загрузок
+    const hasLoadedRef = useRef(false);
+    const isUpdatingRef = useRef(false);
 
-            // ПРОВЕРЯЕМ КЭШ ОБНОВЛЕНИЙ
-            const updatedWorkouts = JSON.parse(localStorage.getItem('updatedWorkouts') || '{}');
-
-            for (const workout of workouts) {
-                const cacheKey = `${courseId}_${workout._id}`;
-                const cachedUpdate = updatedWorkouts[cacheKey];
-
-                // Если есть недавнее обновление (менее 5 минут), используем его
-                if (cachedUpdate && (Date.now() - cachedUpdate.timestamp) < 300000) {
-                    statusMap[workout._id] = cachedUpdate.workoutCompleted;
-                } else {
-                    // Иначе загружаем с сервера
-                    const progress = await getWorkoutProgress(courseId, workout._id);
-                    statusMap[workout._id] = progress?.workoutCompleted || false;
-                }
-            }
-            setWorkoutsProgress(prev => ({
-                ...prev,
-                [courseId]: statusMap
-            }));
-        } catch (error) {
-            console.error('Ошибка загрузки статуса тренировок:', error);
-        }
-    }, []);
-
-    // Загрузка тренировок курса
-    const loadCourseWorkouts = useCallback(async (courseId: string) => {
-        try {
-            const workouts = await getCourseWorkouts(courseId);
-            const workoutsWithDay: Workout[] = workouts.map((workout, index) => ({
-                _id: workout._id,
-                name: workout.name,
-                day: index + 1,
-                completed: false
-            }));
-            setCourseWorkouts(prev => ({ ...prev, [courseId]: workoutsWithDay }));
-            await loadWorkoutsStatus(courseId, workoutsWithDay);
-        } catch (error) {
-            console.error('Ошибка загрузки тренировок курса:', error);
-            setCourseWorkouts(prev => ({ ...prev, [courseId]: [] }));
-        }
-    }, [loadWorkoutsStatus]);
-
-    // Функция для вычисления прогресса курса на основе статуса тренировок
-    const calculateCourseProgress = useCallback((courseId: string, workouts: Workout[]): number => {
-        const statusMap = workoutsProgress[courseId] || {};
+    // Вычисление прогресса курса на основе данных из Redux
+    const calculateCourseProgress = useCallback((courseId: string): number => {
+        const workouts = courseWorkouts[courseId] || [];
         if (workouts.length === 0) return 0;
-        const completedCount = workouts.filter(workout => statusMap[workout._id]).length;
+        
+        let completedCount = 0;
+        for (const workout of workouts) {
+            const key = `${courseId}_${workout._id}`;
+            const progress = workoutProgress[key];
+            if (progress?.workoutCompleted) {
+                completedCount++;
+            }
+        }
+        
         return Math.round((completedCount / workouts.length) * 100);
-    }, [workoutsProgress]);
+    }, [courseWorkouts, workoutProgress]);    
 
-    
-    // ВЫНОСИМ ЛОГИКУ ЗАГРУЗКИ ПРОФИЛЯ В ОТДЕЛЬНУЮ ФУНКЦИЮ
+    // Загрузка профиля
     const loadProfile = useCallback(async () => {
+        if (isUpdatingRef.current) return;
+        isUpdatingRef.current = true;
+
         try {
             setError(null);
-            const token = storage.getToken();
-            if (!token) {
-                router.push('/workout/main');
-                return;
-            }
             
-            // Получаем данные пользователя
-            const userResponse = await getMe();
-            const userData = userResponse.data;
-            setUser({
-                name: userData.email.split('@')[0],
-                email: userData.email,
-            });
+            await dispatch(fetchAllCourses()).unwrap();
+            await dispatch(fetchUserCourses()).unwrap();
             
-            // Получаем все курсы
-            const allCourses = await getAllCourses();
-            
-            // Получаем ID курсов пользователя
-            const userCourseIds = await getUserCourses();
-
-            if (userCourseIds.length === 0) {
+            if (userCoursesIds.length === 0) {
                 setCourses([]);
                 setIsLoading(false);
                 return;
             }
-
+            
             // Загружаем тренировки для всех курсов пользователя
-            for (const courseId of userCourseIds) {
-                await loadCourseWorkouts(courseId);
+            for (const courseId of userCoursesIds) {
+                if (!courseWorkouts[courseId] || courseWorkouts[courseId].length === 0) {
+                    await dispatch(fetchCourseWorkouts(courseId)).unwrap();
+                }
             }
             
             // Формируем массив курсов с прогрессом
             const coursesWithProgress: CourseWithProgress[] = [];
             
-            for (const courseId of userCourseIds) {
+            for (const courseId of userCoursesIds) {
                 const course = allCourses.find((c) => c._id === courseId);
                 if (course) {
-                    const courseWorkoutsList = courseWorkouts[courseId] || [];
-                    const totalProgress = calculateCourseProgress(courseId, courseWorkoutsList);
-
+                    const totalProgress = calculateCourseProgress(courseId);
+                    
                     coursesWithProgress.push({
                         _id: course._id,
                         nameRU: course.nameRU,
@@ -168,9 +125,8 @@ export default function ProfilePage() {
                         workouts: course.workouts || [],
                     });
                 }
-            }                        
+            }
             
-            // СОРТИРУЕМ КУРСЫ 
             const sortedCourses = sortCoursesByOrder(coursesWithProgress);
             setCourses(sortedCourses);
         } catch (error) {
@@ -178,64 +134,265 @@ export default function ProfilePage() {
             setError('Не удалось загрузить профиль. Пожалуйста, попробуйте позже.');
         } finally {
             setIsLoading(false);
+            isUpdatingRef.current = false;
         }
-    }, [router, loadCourseWorkouts, calculateCourseProgress, courseWorkouts]);
+    }, [dispatch, userCoursesIds, allCourses, courseWorkouts, calculateCourseProgress]);
 
+    // Обновление статуса тренировок для модального окна
+    const updateWorkoutsStatus = useCallback(() => {
+        const newWorkoutsCompleted: Record<string, Record<string, boolean>> = {};
+        
+        for (const courseId of userCoursesIds) {
+            const workouts = courseWorkouts[courseId] || [];
+            const statusMap: Record<string, boolean> = {};
+            
+            for (const workout of workouts) {
+                const key = `${courseId}_${workout._id}`;
+                const progress = workoutProgress[key];
+                statusMap[workout._id] = progress?.workoutCompleted || false;
+            }
+            
+            newWorkoutsCompleted[courseId] = statusMap;
+        }
+        
+        setWorkoutsCompleted(newWorkoutsCompleted);
+    }, [userCoursesIds, courseWorkouts, workoutProgress]);
+
+    // Принудительное обновление прогресса курсов
+    const refreshCoursesProgress = useCallback(() => {
+        if (courses.length === 0) return;
+        
+        setCourses(prevCourses => 
+            prevCourses.map(course => {
+                const newProgress = calculateCourseProgress(course._id);
+                if (course.progress === newProgress) return course;
+                return { ...course, progress: newProgress };
+            })
+        );
+    }, [courses, calculateCourseProgress]);
+
+    // Загрузка сохранённого прогресса из localStorage
     useEffect(() => {
-        loadProfile();
-    }, [loadProfile, refreshKey]); 
+        const savedProgress = localStorage.getItem('updatedWorkouts');
+        if (savedProgress) {
+            try {
+                const parsed = JSON.parse(savedProgress) as Record<string, SavedWorkoutProgress>;
+                console.log('Loaded saved progress from localStorage:', parsed);
+                
+                Object.entries(parsed).forEach(([key, value]) => {
+                    const [courseId, workoutId] = key.split('_');
+                    if (courseId && workoutId && value.progressData) {
+                        dispatch(updateLocalProgress({
+                            courseId,
+                            workoutId,
+                            progressData: value.progressData,
+                            workoutCompleted: value.workoutCompleted
+                        }));
+                    }
+                });
+            } catch (error) {
+                console.error('Error parsing saved progress:', error);
+            }
+        }
+    }, [dispatch]);
+
+    // Проверяем параметр refresh в URL (для принудительного обновления)
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const refresh = urlParams.get('refresh');
+        if (refresh) {
+            window.history.replaceState({}, document.title, '/profile');
+            loadProfile();
+        }
+    }, [loadProfile]);
     
-    // Очищаем кэш обновлений при выходе из профиля
+    // Загрузка при монтировании
     useEffect(() => {
-        return () => {
-            // Не очищаем полностью, только старые записи (старше 1 часа)
-            const updatedWorkouts = JSON.parse(localStorage.getItem('updatedWorkouts') || '{}');
-            const now = Date.now();
-            let hasChanges = false;
+        if (hasLoadedRef.current) return;
+        hasLoadedRef.current = true;
+        
+        if (!isAuthorized) {
+            router.push('/workout/main');
+            return;
+        }
+        
+        loadProfile();
+    }, [isAuthorized, router, loadProfile]);
+    
+    // Обновление статуса тренировок для модального окна
+    useEffect(() => {
+        updateWorkoutsStatus();
+    }, [userCoursesIds, courseWorkouts, workoutProgress, updateWorkoutsStatus]);
+
+    // ОСНОВНОЕ ОБНОВЛЕНИЕ ПРОГРЕССА КУРСОВ
+    useEffect(() => {
+        const updateProgress = async () => {
+            if (courses.length === 0) return;
             
-            Object.keys(updatedWorkouts).forEach(key => {
-                if (now - updatedWorkouts[key].timestamp > 3600000) { // 1 час
-                    delete updatedWorkouts[key];
-                    hasChanges = true;
-                }
-            });
+            console.log('Updating all courses progress...');
             
+            const updatedCourses = await Promise.all(
+                courses.map(async (course) => {
+                    const workouts = courseWorkouts[course._id] || [];
+                    let completedCount = 0;
+                    
+                    for (const workout of workouts) {
+                        const key = `${course._id}_${workout._id}`;
+                        const progress = workoutProgress[key];
+                        // Также проверяем localStorage на случай, если Redux ещё не обновился
+                        const savedProgress = localStorage.getItem('updatedWorkouts');
+                        let isCompleted = progress?.workoutCompleted || false;
+                        
+                        if (!isCompleted && savedProgress) {
+                            const parsed = JSON.parse(savedProgress);
+                            if (parsed[key]?.workoutCompleted) {
+                                isCompleted = true;
+                            }
+                        }
+                        
+                        if (isCompleted) {
+                            completedCount++;
+                        }
+                    }
+                    
+                    const newProgress = workouts.length > 0 
+                        ? Math.round((completedCount / workouts.length) * 100) 
+                        : 0;
+                    
+                    return { ...course, progress: newProgress };
+                })
+            );
+            
+            // Проверяем, есть ли изменения
+            const hasChanges = updatedCourses.some((course, index) => course.progress !== courses[index].progress);
             if (hasChanges) {
-                localStorage.setItem('updatedWorkouts', JSON.stringify(updatedWorkouts));
+                console.log('Progress updated:', updatedCourses.map(c => ({ name: c.nameRU, progress: c.progress })));
+                setCourses(updatedCourses);
             }
         };
-    }, []);
+        
+        updateProgress();
+    }, [workoutProgress, courseWorkouts, courses]);
+
+    // Обработчик возврата из тренировки
+    useEffect(() => {
+        const handleRefresh = () => {
+            const shouldRefresh = localStorage.getItem('returnToProfile');
+            if (shouldRefresh === 'true') {
+                localStorage.removeItem('returnToProfile');
+                loadProfile();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleRefresh);
+        window.addEventListener('focus', handleRefresh);
+        
+        return () => {
+            document.removeEventListener('visibilitychange', handleRefresh);
+            window.removeEventListener('focus', handleRefresh);
+        };
+    }, [loadProfile]);
+
+    // Функция для сброса прогресса курса
+    const handleResetCourse = async (courseId: string) => {
+        const loadingToast = showLoading('Сброс прогресса...');
+        
+        try {
+            // Сбрасываем прогресс на сервере
+            await resetCourseProgress(courseId);
+            
+            // Очищаем локальные данные о прогрессе для этого курса
+            const workouts = courseWorkouts[courseId] || [];
+            for (const workout of workouts) {
+                // Очищаем прогресс в Redux
+                dispatch(updateLocalProgress({
+                    courseId,
+                    workoutId: workout._id,
+                    progressData: [],
+                    workoutCompleted: false
+                }));
+            }
+            
+            // Очищаем localStorage
+            const savedProgress = localStorage.getItem('updatedWorkouts');
+            if (savedProgress) {
+                const parsed = JSON.parse(savedProgress);
+                for (const workout of workouts) {
+                    const key = `${courseId}_${workout._id}`;
+                    delete parsed[key];
+                }
+                localStorage.setItem('updatedWorkouts', JSON.stringify(parsed));
+            }
+            
+            // Обновляем статус тренировок
+            updateWorkoutsStatus();
+            
+            // Обновляем прогресс курсов
+            refreshCoursesProgress();
+            
+            dismiss(loadingToast);
+            showSuccess('Прогресс курса сброшен!');
+            
+            // Перезагружаем данные профиля
+            await loadProfile();
+            
+        } catch (error) {
+            dismiss(loadingToast);
+            console.error('Ошибка сброса прогресса:', error);
+            showError('Не удалось сбросить прогресс');
+        }
+    };
+
 
     const handleDeleteCourse = async (courseId: string) => {
         const loadingToast = showLoading('Удаление курса...');
 
+        // НЕМЕДЛЕННО удаляем из локального состояния для мгновенного обновления UI
+        setCourses(prevCourses => prevCourses.filter(c => c._id !== courseId));
+        
+        // Также удаляем из workoutsCompleted
+        setWorkoutsCompleted(prev => {
+            const newState = { ...prev };
+            delete newState[courseId];
+            return newState;
+        });
+
         try {
-            await deleteCourseFromUser(courseId);
-            setCourses(courses.filter(c => c._id !== courseId));
-            
-            const updatedIds = courses.filter(c => c._id !== courseId).map(c => c._id);
-            storage.setUserCoursesIds(updatedIds);
-
-            // Очищаем кэш тренировок
-            setCourseWorkouts(prev => {
-                const newState = { ...prev };
-                delete newState[courseId];
-                return newState;
-            });
-
+            await dispatch(deleteCourse(courseId)).unwrap();
             dismiss(loadingToast);
             showSuccess('Курс успешно удален!');
+            
+            // Принудительно обновляем список курсов пользователя в Redux
+            await dispatch(fetchUserCourses()).unwrap();
+            
         } catch (error) {
             dismiss(loadingToast);
             console.error('Ошибка удаления курса:', error);
-            showError('Не удалось удалить курс');
+            showError('Курс удален из списка');
+            
+            // Даже при ошибке обновляем Redux
+            await dispatch(fetchUserCourses()).unwrap();
         }
     };
 
-    const handleCourseAction = (course: CourseWithProgress) => {
+    const handleCourseAction = async (course: CourseWithProgress) => {
+        // Если прогресс 100%, сбрасываем курс
+        if (course.progress === 100) {
+            await handleResetCourse(course._id);
+            return;
+        }
+        
         setSelectedCourse(course);
         setIsWorkoutModalOpen(true);
+        setIsLoadingWorkouts(true);
+
+        if (!courseWorkouts[course._id] || courseWorkouts[course._id].length === 0) {
+            await dispatch(fetchCourseWorkouts(course._id)).unwrap();
+        }
+        
+        setIsLoadingWorkouts(false);
     };
+
 
     const handleSelectWorkout = (workoutId: string) => {
         if (selectedCourse) {
@@ -248,10 +405,11 @@ export default function ProfilePage() {
     const handleCloseModal = () => {
         setIsWorkoutModalOpen(false);
         setSelectedCourse(null);
+        setIsLoadingWorkouts(false);
     };
 
     const handleLogout = () => {
-        logoutUser();
+        dispatch(logout());
         router.push('/workout/main');
     };
 
@@ -262,20 +420,21 @@ export default function ProfilePage() {
     };
 
     const isWorkoutCompleted = (courseId: string, workoutId: string): boolean => {
-        return workoutsProgress[courseId]?.[workoutId] || false;
+        return workoutsCompleted[courseId]?.[workoutId] || false;
     };
 
-    // ПРОВЕРЯЕМ, НУЖНО ЛИ ОБНОВИТЬ ДАННЫЕ ПРИ ВОЗВРАТЕ НА СТРАНИЦУ
-    useEffect(() => {
-        const shouldRefresh = localStorage.getItem('returnToProfile');
-        if (shouldRefresh === 'true') {
-            localStorage.removeItem('returnToProfile');
-            refreshProfileData();
-        }
-    }, [refreshProfileData]);
+    const getCurrentCourseWorkouts = (): Workout[] => {
+        if (!selectedCourse) return [];
+        const workouts = courseWorkouts[selectedCourse._id] || [];
+        return workouts.map((workout, index) => ({
+            _id: workout._id,
+            name: workout.name,
+            day: index + 1,
+            completed: false
+        }));
+    };
 
-
-    if (isLoading) {
+    if (isLoading || coursesLoading) {
         return (
             <div className={styles['main-container']}>
                 <div className={styles['page-content']}>
@@ -293,14 +452,17 @@ export default function ProfilePage() {
             <Header />
             <div className={styles['error']}>
                 <p>{error}</p>
-                <button onClick={() => window.location.reload()} className={styles['retry-button']}>
-                Попробовать снова
+                <button onClick={() => loadProfile()} className={styles['retry-button']}>
+                    Попробовать снова
                 </button>
             </div>
             </div>
         </div>
         );
     }
+
+    // Получаем тренировки для отображения в модальном окне
+    const currentWorkouts = getCurrentCourseWorkouts();
 
     return (
        <div className={styles['main-container']}>
@@ -445,38 +607,49 @@ export default function ProfilePage() {
                         <h2 className={styles['workout-modal-title']}>Выберите тренировку</h2>
                         
                         <div className={styles['workout-list']}>
-                            {(courseWorkouts[selectedCourse._id] || []).map((workout) => {
-                                const isCompleted = isWorkoutCompleted(selectedCourse._id, workout._id);
-                                return (
-                                    <div 
-                                        key={workout._id}
-                                        className={styles['workout-item']}
-                                        onClick={() => handleSelectWorkout(workout._id)}
-                                    >
-                                        <div className={`${styles['workout-checkbox']} ${isCompleted ? styles['completed'] : ''}`}>
-                                            {isCompleted && (
-                                                <svg width="14" height="10" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                    <path d="M1 5L5 9L13 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                </svg>
-                                            )}
-                                        </div>
-                                        <div className={styles['workout-info']}>
-                                            <div className={styles['workout-title']}>{workout.name}</div>
-                                            <div className={styles['workout-subtitle']}>
-                                                Тренировка / {workout.day} день
+                            {isLoadingWorkouts ? (
+                                <div className={styles['no-workouts']}>
+                                    <p>Загрузка тренировок...</p>
+                                </div>
+                            ) : currentWorkouts.length === 0 ? (
+                                <div className={styles['no-workouts']}>
+                                    <p>Нет доступных тренировок</p>
+                                </div>
+                            ) : (
+                                currentWorkouts.map((workout) => {
+                                    const isCompleted = isWorkoutCompleted(selectedCourse._id, workout._id);
+                                    return (
+                                        <div 
+                                            key={workout._id}
+                                            className={styles['workout-item']}
+                                            onClick={() => handleSelectWorkout(workout._id)}
+                                        >
+                                            <div className={`${styles['workout-checkbox']} ${isCompleted ? styles['completed'] : ''}`}>
+                                                {isCompleted && (
+                                                    <svg width="14" height="10" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <path d="M1 5L5 9L13 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                    </svg>
+                                                )}
                                             </div>
+                                            <div className={styles['workout-info']}>
+                                                <div className={styles['workout-title']}>{workout.name}</div>
+                                                <div className={styles['workout-subtitle']}>
+                                                    Тренировка / {workout.day} день
+                                                </div>
+                                            </div>
+                                            <div className={styles['workout-arrow']}>›</div>
                                         </div>
-                                        <div className={styles['workout-arrow']}>›</div>
-                                    </div>
-                                );
-                            })}
+                                    );
+                                })
+                            )}
                         </div>
+
 
                         <button 
                             className={styles['workout-start-button']}
                             onClick={handleCloseModal}
                         >
-                            Начать
+                            {currentWorkouts.length > 0 ? 'Начать' : 'Закрыть'}
                         </button>
                     </div>
                 </div>
@@ -484,3 +657,4 @@ export default function ProfilePage() {
         </div>
     );
 }
+

@@ -411,6 +411,13 @@
     transform: scale(0.98);
 }
 
+.no-workouts {
+    text-align: center;
+    padding: 40px;
+    color: #666666;
+    font-size: 16px;
+}
+
 /* Загрузка */
 .loading {
     text-align: center;
