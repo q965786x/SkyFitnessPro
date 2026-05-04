@@ -29,100 +29,6 @@ type Course = {
   workouts: string[];
 };
 
-{/* export default function MainPage() {
-  const router = useRouter();
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [userCoursesIds, setUserCoursesIds] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [isSigninModalOpen, setIsSigninModalOpen] = useState(false);
-  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
-
-  // Функция загрузки данных
-  const loadData = async () => {
-    try {
-      // Проверка авторизации
-      const token = storage.getToken();
-      const isAuth = !!token;
-      setIsAuthorized(isAuth);
-
-      if (isAuth) {
-        const userCourses = await getUserCourses();
-        setUserCoursesIds(userCourses);        
-      } else {
-        setUserCoursesIds([]);
-      }
-      
-      // Загружаем все курсы
-      const coursesData = await getAllCourses();
-      console.log('Loaded courses:', coursesData);
-      
-      if (Array.isArray(coursesData) && coursesData.length > 0) {
-        const sortedCourses = sortCoursesByOrder(coursesData);
-        setCourses(sortedCourses);
-      } else {
-        console.warn('Нет данных о курсах или пустой массив');
-        setCourses([]);
-      }
-      
-    } catch (error) {
-      console.error('Ошибка загрузки:', error);
-      setCourses([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-
-    // Функция скролла наверх
-  const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-  };
-
-  // Функция handleLogout
-  const handleLogout = () => {
-    logoutUser();
-    setIsAuthorized(false);
-    setUserCoursesIds([]);
-    router.refresh();
-  };
-
-  // При клике на иконку - переходим на страницу курса
-  const handleCardClick = (courseId: string) => {
-    router.push(`/workout/course/${courseId}`);
-  };
-
-  // Обработчик клика по иконке - останавливаем всплытие и переходим на страницу курса
-  const handleIconClick = (e: React.MouseEvent, courseId: string) => {
-    e.stopPropagation(); // Останавливаем всплытие, чтобы не сработал клик по карточке
-    router.push(`/workout/course/${courseId}`);
-  };
-
-  const isCourseAdded = (courseId: string) => userCoursesIds.includes(courseId);
-
-  // Обновление состояния после успешного входа
-  const handleLoginSuccess = async () => {
-    const token = storage.getToken();
-    setIsAuthorized(!!token);
-    if (token) {
-      const userCourses = await getUserCourses();
-      setUserCoursesIds(userCourses);
-    }
-    setIsSigninModalOpen(false);
-    router.refresh();
-  };
-  
-  if (isLoading) {
-    return <div className={styles.loading}>Загрузка...</div>;
-  } */}
-
 export default function MainPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -133,7 +39,7 @@ export default function MainPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  // Загрузка данных - только один раз
+  
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -152,7 +58,7 @@ export default function MainPage() {
     loadData();
   }, [dispatch, isAuthorized]);
     
-  // Сортируем курсы когда они загружаются
+  
   useEffect(() => {
     if (allCourses.length > 0) {
       const sortedCourses = sortCoursesByOrder(allCourses);
@@ -160,7 +66,7 @@ export default function MainPage() {
     }
   }, [allCourses]);
   
-  // Функция скролла наверх
+  
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
@@ -168,30 +74,27 @@ export default function MainPage() {
     });
   };
 
-  // Функция handleLogout
+  
   const handleLogout = () => {
     dispatch(logout());
     router.push('/workout/main');
   };
 
-  // При клике на карточку - переходим на страницу курса
+  
   const handleCardClick = (courseId: string) => {
     router.push(`/workout/course/${courseId}`);
   };
 
-  // Обработчик клика по иконке добавления
+  
   const handleIconClick = (e: React.MouseEvent, courseId: string) => {
     e.stopPropagation();
 
-    localStorage.setItem('pendingCourseId', courseId);
-    
-    // Перенаправляем на страницу выбранного курса
+    localStorage.setItem('pendingCourseId', courseId);    
     router.push(`/workout/course/${courseId}`);
   };
 
   const isCourseAdded = (courseId: string) => userCoursesIds.includes(courseId);
 
-  // Обновление после успешного входа
   const handleLoginSuccess = async () => {
     await dispatch(fetchUserCourses()).unwrap();
     router.refresh();
@@ -199,7 +102,7 @@ export default function MainPage() {
 
   const isLoading = isInitialLoading || coursesLoading || authLoading;
 
-  if (isLoading) { // <- ИСПРАВЛЕНО: было isLoadingState, нужно isLoading
+  if (isLoading) { 
     return <div className={styles.loading}>Загрузка...</div>;
   }
 
@@ -285,13 +188,11 @@ export default function MainPage() {
                   className={`${styles['add-icon-wrapper']} ${added ? styles['disabled'] : ''}`}
                   onClick={(e) => handleIconClick(e, course._id)}
                 >
-                  {added ? (
-                    // Иконка галочки для добавленных курсов
+                  {added ? (                    
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M16.6667 5L7.5 14.1667L3.33333 10" stroke="#4CAF50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                  ) : (
-                    // Иконка плюса для недобавленных курсов
+                  ) : (                    
                     <Image 
                       width={32}
                       height={32}
@@ -343,8 +244,7 @@ export default function MainPage() {
           })
         )}
       </div>
-
-      {/* Кнопка "Вверх" */}
+      
       <div className={styles['footer-btn']}>
             <button className={styles['scroll-to-top']} onClick={scrollToTop}>
               <span>Вверх</span>

@@ -3,7 +3,7 @@ import { UserType } from "@/sharedTypes/sharedTypes";
 export type User = UserType;
 
 export const storage = {
-    // Токен (используется в authFetch)
+    
     getToken: (): string | null => {
         return localStorage.getItem('token');
     },
@@ -16,7 +16,7 @@ export const storage = {
         localStorage.removeItem('token');
     },
 
-    // Пользователь
+    
     getUser: (): UserType | null => {
         const user = localStorage.getItem('user');
         return user ? JSON.parse(user) : null;
@@ -30,7 +30,7 @@ export const storage = {
         localStorage.removeItem('user');
     },
 
-    // ID курсов пользователя (кэш) 
+    
     getUserCoursesIds: (): string[] => {
         const courses = localStorage.getItem('userCoursesIds');
         return courses ? JSON.parse(courses) : [];
@@ -44,7 +44,7 @@ export const storage = {
         localStorage.removeItem('userCoursesIds');
     },
     
-    // Полная очистка
+    
     clearAll: (): void => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');

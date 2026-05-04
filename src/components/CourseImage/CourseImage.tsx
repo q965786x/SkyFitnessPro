@@ -35,12 +35,10 @@ export default function CourseImage({
   className, 
   priority = false 
 }: CourseImageProps) {
-  const [imgError, setImgError] = useState(false);
+  const [imgError, setImgError] = useState(false);  
   
-  // Пытаемся получить изображение по nameEN, потом по nameRU
-  const imagePath = imageMap[nameEN]?.[type] || imageMap[nameRU]?.[type];
+  const imagePath = imageMap[nameEN]?.[type] || imageMap[nameRU]?.[type];  
   
-  // Если изображение не найдено в маппинге или произошла ошибка загрузки
   if (!imagePath || imgError) {
     return (
       <div 

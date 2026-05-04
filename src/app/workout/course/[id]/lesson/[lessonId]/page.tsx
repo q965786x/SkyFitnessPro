@@ -28,11 +28,9 @@ type WorkoutData = {
     exercises: Exercise[];
 };
 
-// Функция для проверки, завершена ли тренировка полностью
 const isWorkoutFullyCompleted = (progress: number[], exercises: Exercise[]): boolean => {
     if (!progress || progress.length === 0 || exercises.length === 0) return false;
     
-    // Проверяем, что каждое упражнение выполнено полностью (количество >= максимального)
     return progress.every((count, index) => {
         const exercise = exercises[index];
         if (!exercise) return false;
@@ -61,18 +59,12 @@ export default function LessonPage() {
     const [progressData, setProgressData] = useState<number[]>([]);
     const [workoutCompleted, setWorkoutCompleted] = useState(false);
 
-    // Загрузка данных тренировки
+    
     const loadWorkoutData = useCallback(async () => {
-        try {
-            console.log('Loading workout:', workoutId);
-
-            // Загружаем данные тренировки через Redux
+        try {            
             const workoutData = await dispatch(fetchWorkoutById(workoutId)).unwrap();
             
-            console.log('Workout data received:', workoutData);
-            
-            if (!workoutData) {
-                console.error('Тренировка не найдена');
+            if (!workoutData) {                
                 setIsLoading(false);
                 return;
             }
@@ -81,39 +73,43 @@ export default function LessonPage() {
             try {
                 const result = await dispatch(fetchWorkoutProgressThunk({ courseId, workoutId })).unwrap();
                 const progress = result?.progress;
+                
                 if (progress && progress.progressData) {
+                    
                     setProgressData(progress.progressData);
                     const allCompleted = isWorkoutFullyCompleted(progress.progressData, workoutData.exercises);
+                    
                     setWorkoutCompleted(allCompleted);
                 } else {
                     const initialProgress = new Array(workoutData.exercises.length).fill(0);
+                    
                     setProgressData(initialProgress);
-                    setWorkoutCompleted(false);
-                    console.log('Initialized progress with zeros:', initialProgress);
+                    setWorkoutCompleted(false);                    
                 }
-            } catch (error) {
-                console.log('Прогресс не найден, создаем новый:', error);
+            } catch {                
                 const initialProgress = new Array(workoutData.exercises.length).fill(0);
+                
                 setProgressData(initialProgress);
                 setWorkoutCompleted(false);
             }
 
             if (!currentCourse || currentCourse._id !== courseId) {
                 const courseData = await dispatch(fetchCourseById(courseId)).unwrap();
+                
                 if (courseData) {
                     setCourseTitle(courseData.nameRU);
                 }
             } else {
                 setCourseTitle(currentCourse.nameRU);
             }
-        } catch (error) {
-            console.error('Ошибка загрузки:', error);
+        } catch  {
+            
         } finally {
             setIsLoading(false);
         }
     }, [dispatch, courseId, workoutId, currentCourse]);
 
-    // Проверка авторизации через токен (более надёжно)
+    
     useEffect(() => {
         const token = storage.getToken();
         
@@ -125,11 +121,12 @@ export default function LessonPage() {
         loadWorkoutData();
     }, [router, loadWorkoutData]);
 
-    // Синхронизация с Redux прогрессом
+    
     useEffect(() => {
         if (workoutProgress && workout) {
-            console.log('Workout progress updated from Redux:', workoutProgress);
+
             setProgressData(workoutProgress.progressData || []);
+            
             const allCompleted = isWorkoutFullyCompleted(
                 workoutProgress.progressData || [], 
                 workout.exercises
@@ -141,13 +138,12 @@ export default function LessonPage() {
     const handleCountChange = (index: number, value: number) => {
         if (!workout) return;
 
-        const newProgress = [...progressData];
-        // Не позволяем превысить максимальное значение
+        const newProgress = [...progressData];        
         const maxQuantity = workout?.exercises[index]?.quantity || 0;
         newProgress[index] = Math.min(value, maxQuantity);
-        setProgressData(newProgress);
         
-        // Проверяем, завершена ли тренировка полностью
+        setProgressData(newProgress);        
+        
         if (workout) {
             const allCompleted = isWorkoutFullyCompleted(newProgress, workout.exercises);
             dispatch(updateLocalProgress({
@@ -164,13 +160,9 @@ export default function LessonPage() {
 
         const loadingToast = showLoading('Сохранение прогресса...');
         
-        try {
-            // Проверяем, завершена ли тренировка полностью
+        try {            
             const allCompleted = isWorkoutFullyCompleted(progressData, workout.exercises);
             
-            console.log('Saving progress:', { courseId, workoutId, progressData, allCompleted });
-
-            // Сохраняем через Redux
             await dispatch(saveWorkout({ 
                 courseId, 
                 workoutId, 
@@ -183,8 +175,7 @@ export default function LessonPage() {
 
             showSuccess('Прогресс успешно сохранен!');
             setIsSuccessModalOpen(true);
-
-            // Сохраняем в localStorage
+            
             const key = `${courseId}_${workoutId}`;
             const updatedWorkouts = JSON.parse(localStorage.getItem('updatedWorkouts') || '{}');
             updatedWorkouts[key] = {
@@ -194,18 +185,15 @@ export default function LessonPage() {
             };
             localStorage.setItem('updatedWorkouts', JSON.stringify(updatedWorkouts));
 
-            // Устанавливаем флаг для обновления профиля
-            localStorage.setItem('returnToProfile', 'true');
+            localStorage.setItem('returnToProfile', 'true');            
             
-            // Принудительная перезагрузка страницы профиля через параметр
             setTimeout(() => {
                 router.push('/profile');
             }, 1500);
             
 
-        } catch (error) {
-            dismiss(loadingToast);
-            console.error('Ошибка сохранения прогресса:', error);
+        } catch {
+            dismiss(loadingToast);            
             showError('Не удалось сохранить прогресс');
         }
     };
@@ -219,21 +207,12 @@ export default function LessonPage() {
             return () => clearTimeout(timer);
         }
     }, [isSuccessModalOpen]);
-
-    // Функция для вычисления процента выполнения упражнения
+    
     const getProgressPercent = (current: number, max: number): number => {
         if (max === 0) return 0;
         return Math.round((current / max) * 100);
     };
 
-    console.log('Render state:', { 
-        isLoading, 
-        workoutName: workout?.name, 
-        progressData, 
-        exercisesCount: workout?.exercises.length,
-        workoutCompleted 
-    });
-   
 
     if (isLoading) {
         return (
@@ -274,7 +253,6 @@ export default function LessonPage() {
 
             <h1 className={styles['course-name']}>{courseTitle}</h1>
 
-            {/* Видео */}
             <div className={styles['video-container']}>
                 <iframe
                     width="100%"
@@ -290,7 +268,6 @@ export default function LessonPage() {
             <div className={styles['exercises-section']}>
                 <h2 className={styles['exercises-title']}>{workout.name}</h2>
             
-                {/* Список упражнений с progress bar */}
                 <div className={styles['exercises-grid']}>
                     <div className={styles['exercises-list']}>
                         {workout.exercises.map((exercise, index) => {
@@ -336,8 +313,7 @@ export default function LessonPage() {
                 
                 </div>
             </div>
-
-            {/* Модальное окно для заполнения прогресса */}
+           
             {isModalOpen && workout && (
                 <div className={styles['modal-overlay']} onClick={() => setIsModalOpen(false)}>
                     <div className={styles['modal']} onClick={(e) => e.stopPropagation()}>
@@ -375,8 +351,7 @@ export default function LessonPage() {
                     </div>
                 </div>
             )}
-
-            {/* Модальное окно успеха */}
+            
             {isSuccessModalOpen && (
                 <div className={styles['modal-overlay']} onClick={() => setIsSuccessModalOpen(false)}>
                     <div className={styles['success-modal']} onClick={(e) => e.stopPropagation()}>

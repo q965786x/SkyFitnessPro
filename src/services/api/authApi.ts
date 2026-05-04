@@ -18,11 +18,6 @@ export const registerUser = ({ email, password }: registerUserProps) => {
         password: password 
     };
     
-    console.log('Sending registration data:', { 
-        email: data.email, 
-        passwordLength: data.password.length
-    });
-
     return axios({
         method: 'post',
         url: `${BASE_URL}/auth/register`,
@@ -30,13 +25,8 @@ export const registerUser = ({ email, password }: registerUserProps) => {
             'Content-Type': ''            
         },
         data,
-    })
-    .then(response => {
-        console.log('Registration SUCCESS:', response.data);
-        return response;
-    })
-    .catch(error => {
-        console.error('Registration error:', error.response?.data || error.message);
+    })    
+    .catch(error => {        
         throw error;
     });
 };
@@ -46,9 +36,7 @@ export const loginUser = ({ email, password }: loginUserProps) => {
     const data = { 
         email: email.trim(), 
         password: password 
-    };
-    
-    console.log('Sending login request:', { email: data.email, password: '***' });
+    };    
     
     return axios({
         method: 'post',
@@ -59,16 +47,13 @@ export const loginUser = ({ email, password }: loginUserProps) => {
         data,
     })
     .then((response) => {
-        console.log('Login response:', response.data);
         const { token } = response.data;
         if (token) {
-            storage.setToken(token);
-            console.log('Token saved successfully');
+            storage.setToken(token);            
         }
         return response;
     })
-    .catch(error => {
-        console.error('Login error:', error.response?.data || error.message);
+    .catch(error => {        
         throw error;
     });
 };
@@ -78,8 +63,7 @@ export const logoutUser = (): void => {
 };
 
 export const getMe = async () => {
-    const token = storage.getToken();
-    console.log('getMe called, token:', token ? 'exists' : 'not found');
+    const token = storage.getToken();    
 
     if (!token) {
         throw new Error('No token found');
@@ -92,42 +76,31 @@ export const getMe = async () => {
             headers: {
                 'Authorization': `Bearer ${token}`,
             },
-        });
+        });        
         
-        console.log('getMe raw response:', response.data);
+        let userData = response.data;        
         
-        // Получаем данные пользователя (без обертки)
-        let userData = response.data;
-        
-        // Если данные обернуты в поле user
         if (response.data.user) {
             userData = response.data.user;
             console.log('Extracted user from response.user');
-        }
+        }        
         
-        // Проверяем, что email существует
-        if (!userData || !userData.email) {
-            console.error('Unexpected response structure:', response.data);
+        if (!userData || !userData.email) {            
             throw new Error('Email не найден в ответе сервера');
-        }
+        }        
         
-        console.log('Final userData:', userData);
-        
-        // Сохраняем пользователя в storage
         storage.setUser({
             name: userData.email.split('@')[0],
             email: userData.email,
-        });
+        });        
         
-        // Возвращаем данные в ожидаемом формате
         return { 
             data: {
                 email: userData.email,
                 selectedCourses: userData.selectedCourses || []
             } 
         };
-    } catch (error) {
-        console.error('getMe error:', error);
+    } catch (error) {        
         throw error;
     }
 };

@@ -55,11 +55,8 @@ export const saveWorkout = createAsyncThunk(
     progressData: number[];
   }) => {
     await saveWorkoutProgress(courseId, workoutId, progressData);
-    const allCompleted = progressData.every(count => count > 0);
-
-    console.log('Saving workout to Redux:', { courseId, workoutId, progressData, allCompleted });
+    const allCompleted = progressData.every(count => count > 0);    
     
-    // Дополнительно сохраняем в localStorage для синхронизации
     const key = `${courseId}_${workoutId}`;
     const updatedWorkouts = JSON.parse(localStorage.getItem('updatedWorkouts') || '{}');
     updatedWorkouts[key] = {
@@ -101,9 +98,8 @@ const progressSlice = createSlice({
         workoutId,
         workoutCompleted,
         progressData,
-      };
+      };      
       
-      // Обновляем кэш в localStorage для синхронизации
       const updatedWorkouts = JSON.parse(localStorage.getItem('updatedWorkouts') || '{}');
       updatedWorkouts[key] = {
         progressData,

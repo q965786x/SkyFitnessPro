@@ -61,11 +61,9 @@ export default function ProfilePage() {
     const [isLoadingWorkouts, setIsLoadingWorkouts] = useState(false);
     const [workoutsCompleted, setWorkoutsCompleted] = useState<Record<string, Record<string, boolean>>>({});
 
-    // Флаг для предотвращения множественных загрузок
     const hasLoadedRef = useRef(false);
     const isUpdatingRef = useRef(false);
-
-    // Вычисление прогресса курса на основе данных из Redux
+    
     const calculateCourseProgress = useCallback((courseId: string): number => {
         const workouts = courseWorkouts[courseId] || [];
         if (workouts.length === 0) return 0;
@@ -77,12 +75,10 @@ export default function ProfilePage() {
             if (progress?.workoutCompleted) {
                 completedCount++;
             }
-        }
-        
+        }        
         return Math.round((completedCount / workouts.length) * 100);
-    }, [courseWorkouts, workoutProgress]);    
-
-    // Загрузка профиля
+    }, [courseWorkouts, workoutProgress]);
+    
     const loadProfile = useCallback(async () => {
         if (isUpdatingRef.current) return;
         isUpdatingRef.current = true;
@@ -97,16 +93,14 @@ export default function ProfilePage() {
                 setCourses([]);
                 setIsLoading(false);
                 return;
-            }
+            }            
             
-            // Загружаем тренировки для всех курсов пользователя
             for (const courseId of userCoursesIds) {
                 if (!courseWorkouts[courseId] || courseWorkouts[courseId].length === 0) {
                     await dispatch(fetchCourseWorkouts(courseId)).unwrap();
                 }
-            }
+            }            
             
-            // Формируем массив курсов с прогрессом
             const coursesWithProgress: CourseWithProgress[] = [];
             
             for (const courseId of userCoursesIds) {
@@ -129,8 +123,7 @@ export default function ProfilePage() {
             
             const sortedCourses = sortCoursesByOrder(coursesWithProgress);
             setCourses(sortedCourses);
-        } catch (error) {
-            console.error('Ошибка загрузки профиля:', error);
+        } catch {            
             setError('Не удалось загрузить профиль. Пожалуйста, попробуйте позже.');
         } finally {
             setIsLoading(false);
@@ -138,7 +131,6 @@ export default function ProfilePage() {
         }
     }, [dispatch, userCoursesIds, allCourses, courseWorkouts, calculateCourseProgress]);
 
-    // Обновление статуса тренировок для модального окна
     const updateWorkoutsStatus = useCallback(() => {
         const newWorkoutsCompleted: Record<string, Record<string, boolean>> = {};
         
@@ -157,8 +149,7 @@ export default function ProfilePage() {
         
         setWorkoutsCompleted(newWorkoutsCompleted);
     }, [userCoursesIds, courseWorkouts, workoutProgress]);
-
-    // Принудительное обновление прогресса курсов
+    
     const refreshCoursesProgress = useCallback(() => {
         if (courses.length === 0) return;
         
@@ -171,14 +162,13 @@ export default function ProfilePage() {
         );
     }, [courses, calculateCourseProgress]);
 
-    // Загрузка сохранённого прогресса из localStorage
+    
     useEffect(() => {
         const savedProgress = localStorage.getItem('updatedWorkouts');
         if (savedProgress) {
             try {
                 const parsed = JSON.parse(savedProgress) as Record<string, SavedWorkoutProgress>;
-                console.log('Loaded saved progress from localStorage:', parsed);
-                
+                                
                 Object.entries(parsed).forEach(([key, value]) => {
                     const [courseId, workoutId] = key.split('_');
                     if (courseId && workoutId && value.progressData) {
@@ -190,13 +180,13 @@ export default function ProfilePage() {
                         }));
                     }
                 });
-            } catch (error) {
-                console.error('Error parsing saved progress:', error);
+            } catch {
+                
             }
         }
     }, [dispatch]);
 
-    // Проверяем параметр refresh в URL (для принудительного обновления)
+    
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const refresh = urlParams.get('refresh');
@@ -206,7 +196,7 @@ export default function ProfilePage() {
         }
     }, [loadProfile]);
     
-    // Загрузка при монтировании
+    
     useEffect(() => {
         if (hasLoadedRef.current) return;
         hasLoadedRef.current = true;
@@ -219,17 +209,15 @@ export default function ProfilePage() {
         loadProfile();
     }, [isAuthorized, router, loadProfile]);
     
-    // Обновление статуса тренировок для модального окна
+    
     useEffect(() => {
         updateWorkoutsStatus();
     }, [userCoursesIds, courseWorkouts, workoutProgress, updateWorkoutsStatus]);
 
-    // ОСНОВНОЕ ОБНОВЛЕНИЕ ПРОГРЕССА КУРСОВ
+    
     useEffect(() => {
         const updateProgress = async () => {
-            if (courses.length === 0) return;
-            
-            console.log('Updating all courses progress...');
+            if (courses.length === 0) return;           
             
             const updatedCourses = await Promise.all(
                 courses.map(async (course) => {
@@ -239,7 +227,7 @@ export default function ProfilePage() {
                     for (const workout of workouts) {
                         const key = `${course._id}_${workout._id}`;
                         const progress = workoutProgress[key];
-                        // Также проверяем localStorage на случай, если Redux ещё не обновился
+                       
                         const savedProgress = localStorage.getItem('updatedWorkouts');
                         let isCompleted = progress?.workoutCompleted || false;
                         
@@ -261,20 +249,17 @@ export default function ProfilePage() {
                     
                     return { ...course, progress: newProgress };
                 })
-            );
+            );            
             
-            // Проверяем, есть ли изменения
             const hasChanges = updatedCourses.some((course, index) => course.progress !== courses[index].progress);
-            if (hasChanges) {
-                console.log('Progress updated:', updatedCourses.map(c => ({ name: c.nameRU, progress: c.progress })));
+            if (hasChanges) {                
                 setCourses(updatedCourses);
             }
         };
         
         updateProgress();
     }, [workoutProgress, courseWorkouts, courses]);
-
-    // Обработчик возврата из тренировки
+    
     useEffect(() => {
         const handleRefresh = () => {
             const shouldRefresh = localStorage.getItem('returnToProfile');
@@ -292,28 +277,23 @@ export default function ProfilePage() {
             window.removeEventListener('focus', handleRefresh);
         };
     }, [loadProfile]);
-
-    // Функция для сброса прогресса курса
+    
     const handleResetCourse = async (courseId: string) => {
         const loadingToast = showLoading('Сброс прогресса...');
         
-        try {
-            // Сбрасываем прогресс на сервере
-            await resetCourseProgress(courseId);
+        try {            
+            await resetCourseProgress(courseId);            
             
-            // Очищаем локальные данные о прогрессе для этого курса
             const workouts = courseWorkouts[courseId] || [];
-            for (const workout of workouts) {
-                // Очищаем прогресс в Redux
+            for (const workout of workouts) {                
                 dispatch(updateLocalProgress({
                     courseId,
                     workoutId: workout._id,
                     progressData: [],
                     workoutCompleted: false
                 }));
-            }
+            }            
             
-            // Очищаем localStorage
             const savedProgress = localStorage.getItem('updatedWorkouts');
             if (savedProgress) {
                 const parsed = JSON.parse(savedProgress);
@@ -322,23 +302,17 @@ export default function ProfilePage() {
                     delete parsed[key];
                 }
                 localStorage.setItem('updatedWorkouts', JSON.stringify(parsed));
-            }
+            }            
             
-            // Обновляем статус тренировок
-            updateWorkoutsStatus();
-            
-            // Обновляем прогресс курсов
-            refreshCoursesProgress();
-            
+            updateWorkoutsStatus();            
+            refreshCoursesProgress();           
             dismiss(loadingToast);
-            showSuccess('Прогресс курса сброшен!');
+            showSuccess('Прогресс курса сброшен!');            
             
-            // Перезагружаем данные профиля
             await loadProfile();
             
-        } catch (error) {
-            dismiss(loadingToast);
-            console.error('Ошибка сброса прогресса:', error);
+        } catch {
+            dismiss(loadingToast);            
             showError('Не удалось сбросить прогресс');
         }
     };
@@ -346,11 +320,9 @@ export default function ProfilePage() {
 
     const handleDeleteCourse = async (courseId: string) => {
         const loadingToast = showLoading('Удаление курса...');
-
-        // НЕМЕДЛЕННО удаляем из локального состояния для мгновенного обновления UI
+        
         setCourses(prevCourses => prevCourses.filter(c => c._id !== courseId));
         
-        // Также удаляем из workoutsCompleted
         setWorkoutsCompleted(prev => {
             const newState = { ...prev };
             delete newState[courseId];
@@ -360,23 +332,19 @@ export default function ProfilePage() {
         try {
             await dispatch(deleteCourse(courseId)).unwrap();
             dismiss(loadingToast);
-            showSuccess('Курс успешно удален!');
+            showSuccess('Курс успешно удален!');            
             
-            // Принудительно обновляем список курсов пользователя в Redux
             await dispatch(fetchUserCourses()).unwrap();
             
-        } catch (error) {
-            dismiss(loadingToast);
-            console.error('Ошибка удаления курса:', error);
-            showError('Курс удален из списка');
+        } catch {
+            dismiss(loadingToast);            
+            showError('Курс удален из списка');            
             
-            // Даже при ошибке обновляем Redux
             await dispatch(fetchUserCourses()).unwrap();
         }
     };
 
     const handleCourseAction = async (course: CourseWithProgress) => {
-        // Если прогресс 100%, сбрасываем курс
         if (course.progress === 100) {
             await handleResetCourse(course._id);
             return;
@@ -460,8 +428,7 @@ export default function ProfilePage() {
         </div>
         );
     }
-
-    // Получаем тренировки для отображения в модальном окне
+    
     const currentWorkouts = getCurrentCourseWorkouts();
 
     return (
@@ -570,8 +537,7 @@ export default function ProfilePage() {
                                                 <span>Сложность: {course.difficulty}</span>
                                             </button>
                                         </div>
-
-                                        {/* Блок прогресса */}
+                                        
                                         <div className={styles['progress-section']}>
                                             <div className={styles['progress-header']}>
                                                 <div className={styles['progress-label']}>Прогресс</div>
@@ -657,4 +623,3 @@ export default function ProfilePage() {
         </div>
     );
 }
-

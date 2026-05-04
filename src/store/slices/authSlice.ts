@@ -17,7 +17,6 @@ const initialState: AuthState = {
   error: null,
 };
 
-// Асинхронные действия
 export const login = createAsyncThunk(
   'auth/login',
   async ({ email, password }: { email: string; password: string }) => {
@@ -83,8 +82,7 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-
-      // Login
+      
       .addCase(login.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -98,8 +96,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.error = action.error.message || 'Ошибка входа';
       })
-
-      // Register
+      
       .addCase(register.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -113,8 +110,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.error = action.error.message || 'Ошибка регистрации';
       })
-
-      // Check auth
+      
       .addCase(checkAuth.pending, (state) => {
         state.isLoading = true;
       })
@@ -127,9 +123,8 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthorized = false;
         state.user = null;
-      })
+      })      
       
-      // Logout
       .addCase(logout.fulfilled, (state) => {
         state.isAuthorized = false;
         state.user = null;

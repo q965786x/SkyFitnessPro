@@ -84,8 +84,7 @@ const coursesSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    builder
-      // Fetch all courses
+    builder      
       .addCase(fetchAllCourses.pending, (state) => {
         state.isLoading = true;
       })
@@ -96,27 +95,22 @@ const coursesSlice = createSlice({
       .addCase(fetchAllCourses.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || 'Ошибка загрузки курсов';
-      })
-      // Fetch user courses
+      })      
       .addCase(fetchUserCourses.fulfilled, (state, action) => {
         state.userCoursesIds = action.payload;
-      })
-      // Fetch course by id
+      })      
       .addCase(fetchCourseById.fulfilled, (state, action) => {
         state.currentCourse = action.payload;
-      })
-      // Fetch course workouts
+      })      
       .addCase(fetchCourseWorkouts.fulfilled, (state, action) => {
         state.courseWorkouts[action.payload.courseId] = action.payload.workouts;
-      })
-      // Add course
+      })      
       .addCase(addCourse.fulfilled, (state, action) => {
         if (!state.userCoursesIds.includes(action.payload)) {
           state.userCoursesIds.push(action.payload);
         }
         storage.setUserCoursesIds(state.userCoursesIds);
-      })
-      // Delete course
+      })      
       .addCase(deleteCourse.fulfilled, (state, action) => {
         state.userCoursesIds = state.userCoursesIds.filter(id => id !== action.payload);
         storage.setUserCoursesIds(state.userCoursesIds);
