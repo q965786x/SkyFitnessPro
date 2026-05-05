@@ -15,6 +15,8 @@ import { logout } from '@/store/slices/authSlice';
 import CourseImage from '@/components/CourseImage/CourseImage';
 import SigninModal from '@/components/AuthModal/SigninModal';
 import SignupModal from '@/components/AuthModal/SignupModal';
+import dynamic from 'next/dynamic';
+import 'react-loading-skeleton/dist/skeleton.css';
 
 type Course = {
   _id: string;
@@ -28,6 +30,11 @@ type Course = {
   dailyDurationInMinutes?: { from: number; to: number };
   workouts: string[];
 };
+
+const MainPageSkeleton = dynamic(
+  () => import('@/components/Skeleton/MainPageSkeleton'),
+  { ssr: false }
+);
 
 export default function MainPage() {
   const router = useRouter();
@@ -103,9 +110,63 @@ export default function MainPage() {
   const isLoading = isInitialLoading || coursesLoading || authLoading;
 
   if (isLoading) { 
-    return <div className={styles.loading}>Загрузка...</div>;
-  }
+    return (
+      <div className={styles['main-container']}>
+          <div className={styles['page-content']}>          
+            <div className={styles['header-nav']}>
+              <div className={styles['logo-area']}>
+                <div className={styles.logo}>
+                  <Image 
+                    width={220}
+                    height={35}
+                    className={styles['logo__image']}
+                    src="/img/logo.png"
+                    alt={'logo'}
+                    loading="eager"
+                    priority
+                  />
+                </div>
+                <div className={styles['logo-subtitle']}>
+                  Онлайн-тренировки для занятий дома
+                </div>
+              </div>
+              {isAuthorized ? (
+                <button 
+                  className={styles['logout-btn']} 
+                  onClick={handleLogout}
+                >
+                  Выйти
+                </button>
+              ) : (
+                <button 
+                  className={styles['login-btn']} 
+                  onClick={() => dispatch(openSigninModal())}
+                >
+                  Войти
+                </button>
+              )}
+            </div>
+            
+            <div className={styles['title-section']}>
+              <h1 className={styles['main-title']}>Начните заниматься спортом и улучшите качество жизни</h1>
+              <div className={styles['info-badge']}>
+                <Image 
+                    width={288}
+                    height={120}
+                    className={styles['info-badge__image']}
+                    src="/img/badge.png"
+                    alt={'badge'}
+                    loading="eager"
+                  />
+              </div>
+            </div>
 
+            {/* Скелетон показывается только при загрузке */}
+            <MainPageSkeleton />
+          </div>
+        </div>
+      );
+    }
     
   return (
     <>
@@ -157,7 +218,7 @@ export default function MainPage() {
                   loading="eager"
                 />
             </div>
-          </div>
+          </div>          
           
         <div className={styles['cards']}>
           {courses.length === 0 ? (

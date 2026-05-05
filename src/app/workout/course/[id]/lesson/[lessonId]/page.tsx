@@ -1,6 +1,8 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import Header from '@/components/Header/Header';
+import 'react-loading-skeleton/dist/skeleton.css';
 import styles from './page.module.css';
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
@@ -37,6 +39,11 @@ const isWorkoutFullyCompleted = (progress: number[], exercises: Exercise[]): boo
         return count >= exercise.quantity;
     });
 };
+
+const LessonPageSkeleton = dynamic(
+  () => import('@/components/Skeleton/LessonPageSkeleton'),
+  { ssr: false }
+);
 
 export default function LessonPage() {
     const { showSuccess, showError, showLoading, dismiss } = useToast();
@@ -216,12 +223,12 @@ export default function LessonPage() {
 
     if (isLoading) {
         return (
-            <div className={styles['main-container']}>
-                <div className={styles['page-content']}>
-                    <Header />
-                    <div className={styles['loading']}>Загрузка...</div>
-                </div>
+        <div className={styles['main-container']}>
+            <div className={styles['page-content']}>
+            <Header />
+            <LessonPageSkeleton />
             </div>
+        </div>
         );
     }
 

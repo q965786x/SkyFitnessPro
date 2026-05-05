@@ -1,6 +1,8 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import Header from "@/components/Header/Header";
+import 'react-loading-skeleton/dist/skeleton.css';
 import styles from './page.module.css';
 import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -43,6 +45,11 @@ type Workout = {
     day: number;
     completed?: boolean;
 };
+
+const ProfilePageSkeleton = dynamic(
+  () => import('@/components/Skeleton/ProfilePageSkeleton'),
+  { ssr: false }
+);
 
 export default function ProfilePage() {
     const { showSuccess, showError, showLoading, dismiss } = useToast();
@@ -404,12 +411,12 @@ export default function ProfilePage() {
 
     if (isLoading || coursesLoading) {
         return (
-            <div className={styles['main-container']}>
-                <div className={styles['page-content']}>
-                    <Header />
-                    <div className={styles['loading']}>Загрузка...</div>
-                </div>
+        <div className={styles['main-container']}>
+            <div className={styles['page-content']}>
+            <Header />
+            <ProfilePageSkeleton />
             </div>
+        </div>
         );
     }
 

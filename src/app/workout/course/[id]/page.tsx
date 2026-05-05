@@ -1,6 +1,8 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import Header from '@/components/Header/Header';
+import 'react-loading-skeleton/dist/skeleton.css';
 import styles from './page.module.css';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
@@ -16,6 +18,11 @@ import { useToast } from '@/utils/useToast';
 import CourseImage from '@/components/CourseImage/CourseImage';
 import SigninModal from '@/components/AuthModal/SigninModal';
 import SignupModal from '@/components/AuthModal/SignupModal';
+
+const CoursePageSkeleton = dynamic(
+  () => import('@/components/Skeleton/CoursePageSkeleton'),
+  { ssr: false }
+);
 
 export default function CoursePage() {
     const { showSuccess, showError, showLoading, dismiss } = useToast();
@@ -81,14 +88,12 @@ export default function CoursePage() {
 
     if (isLoading || coursesLoading) {
         return (
-            <div className={styles['main-container']}>
-                <div className={styles['page-content']}>
-                    <Header />
-                    <div className={styles.loading}>
-                        <p>Загрузка курса...</p>
-                    </div>
-                </div>
+        <div className={styles['main-container']}>
+            <div className={styles['page-content']}>
+            <Header />
+            <CoursePageSkeleton />
             </div>
+        </div>
         );
     }
 
