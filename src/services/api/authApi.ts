@@ -81,8 +81,7 @@ export const getMe = async () => {
         let userData = response.data;        
         
         if (response.data.user) {
-            userData = response.data.user;
-            console.log('Extracted user from response.user');
+            userData = response.data.user;            
         }        
         
         if (!userData || !userData.email) {            
