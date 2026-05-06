@@ -1,8 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',  // Включаем статический экспорт
+  output: 'export',
   images: {
-    unoptimized: true, // Отключаем оптимизацию изображений Next.js
+    unoptimized: true,
   },
 }
+
 module.exports = nextConfig
