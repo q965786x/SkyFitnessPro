@@ -16,6 +16,8 @@
 # next.js
 /.next/
 /out/
+AGENTS.md
+CLAUD.md
 
 # production
 /build
