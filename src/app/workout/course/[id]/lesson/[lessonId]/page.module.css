@@ -12,7 +12,6 @@
     flex-direction: column;
 }
 
-/* Название курса */
 .course-name {
     font-size: 60px;
     font-weight: 500;
@@ -35,46 +34,6 @@
     display: block;
 }
 
-/* Карточка упражнения */
-/*.exercise-card {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px 24px;
-    background: #F5F5F5;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border: 2px solid transparent;
-}
-
-.exercise-card:hover {
-    background: #E8E8E8;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.exercise-card.completed {
-    background: #E8F5E9;
-    border-color: #4CAF50;
-}
-
-.exercise-name {
-    font-size: 18px;
-    font-weight: 400;
-    color: #000000;
-    flex: 1;
-}
-
-.exercise-progress {
-    font-size: 18px;
-    font-weight: 400;
-    color: #000000;
-    min-width: 50px;
-    text-align: right;
-} */
-
-/* Блок с упражнениями */
 .exercises-section {
     width: 100%;
     max-width: 1160px;
@@ -87,7 +46,6 @@
     margin-bottom: 20px;
 }
 
-/* Сетка упражнений: 3 колонки */
 .exercises-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -95,7 +53,6 @@
     margin-bottom: 50px;
 }
 
-/* Список упражнений */
 .exercises-list {
     display: flex;
     flex-direction: column;
@@ -103,7 +60,6 @@
     margin-bottom: 40px;
 }
 
-/* Элемент упражнения */
 .exercise-item {
     background: #F5F5F5;
     border-radius: 16px;
@@ -134,7 +90,6 @@
     color: #000000;
 }
 
-/* Progress bar контейнер */
 .progress-bar-container {
     width: 100%;
     height: 8px;
@@ -144,7 +99,6 @@
     margin-bottom: 12px;
 }
 
-/* Заполнение progress bar */
 .progress-bar-fill-exercise {
     height: 100%;
     background: linear-gradient(90deg, #BCEC30 0%, #9ED020 100%);
@@ -168,10 +122,8 @@
     color: #888888;
 }
 
-/* Кнопка "Заполнить свой прогресс" */
-.fill-progress-button {
-    width: 100%;
-    max-width: 320px;
+.fill-progress-button,
+.back-button {
     height: 52px;
     background-color: #BCEC30;
     border: none;
@@ -180,35 +132,31 @@
     font-weight: 400;
     color: #000000;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s;    
+}
+
+.fill-progress-button {
+    width: 100%;
+    max-width: 320px;
     margin: 20px 0 0 0;
     display: block;
 }
 
-.fill-progress-button:hover {
-    background-color: #a9d62a;
-    transform: scale(0.98);
-}
-
 .back-button {
     width: 200px;
-    height: 52px;
-    background-color: #BCEC30;
-    border: none;
-    border-radius: 46px;
-    font-size: 18px;
-    font-weight: 400;
-    color: #000000;
-    cursor: pointer;
-    transition: all 0.2s;
     margin-top: 20px;
 }
 
+.fill-progress-button:hover,
 .back-button:hover {
     background-color: #a9d62a;
 }
 
-/* Загрузка и ошибки */
+.fill-progress-button:hover,
+.modal-save-button:hover {
+    transform: scale(0.98);
+}
+
 .loading {
     text-align: center;
     padding: 100px;
@@ -223,7 +171,6 @@
     color: #FF4444;
 }
 
-/* Модальное окно */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -327,7 +274,6 @@
     transform: scale(0.98);
 }
 
-/* Модальное окно успеха */
 .success-modal {
     width: 426px;
     height: 270px;
@@ -362,10 +308,7 @@
     margin-bottom: 10px;
 }
 
-
-
-
-/* Адаптивность */
+/* Планшеты и небольшие десктопы (до 1280px) */
 @media (max-width: 1280px) {
     .page-content {
         padding: 32px 60px 48px 60px;
@@ -376,50 +319,7 @@
     }
 }
 
-@media (max-width: 1024px) {
-    .exercises-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 15px;
-    }
-    
-    .course-name {
-        font-size: 40px;
-    }
-}
-
-@media (max-width: 768px) {
-    .page-content {
-        padding: 32px 20px 48px 20px;
-    }
-    
-    .course-name {
-        font-size: 32px;
-        margin-bottom: 30px;
-    }
-    
-    .exercises-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .exercise-card {
-        padding: 15px 20px;
-    }
-    
-    .exercise-name {
-        font-size: 16px;
-    }
-    
-    .exercise-progress {
-        font-size: 16px;
-    }
-    
-    .fill-progress-button {
-        width: 100%;
-        max-width: 100%;
-    }
-}
-
-/* Планшетная версия (768px - 1024px) */
+/* Планшеты (768px - 1024px) */
 @media (max-width: 1024px) {
     .main-container {
         width: 100%;
@@ -430,8 +330,7 @@
     }
     
     .course-name {
-        font-size: 48px;
-        margin-bottom: 30px;
+        font-size: 40px;
     }
     
     .video-container iframe {
@@ -439,6 +338,7 @@
     }
     
     .exercises-grid {
+        grid-template-columns: repeat(2, 1fr);
         gap: 15px;
     }
     
@@ -450,6 +350,27 @@
         font-size: 16px;
     }
     
+    .count-input {
+        width: 70px;
+        height: 38px;
+        font-size: 15px;
+        padding: 0 10px;
+    }
+    
+    .count-input::-webkit-inner-spin-button,
+    .count-input::-webkit-outer-spin-button {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .modal-exercise-count {
+        gap: 12px;
+    }
+    
+    .count-label {
+        font-size: 13px;
+    }
+    
     .modal {
         width: 90%;
         max-width: 426px;
@@ -458,7 +379,7 @@
     }
 }
 
-/* Мобильная версия (до 768px) */
+/* Мобильные устройства (до 768px) */
 @media (max-width: 768px) {
     .main-container {
         width: 100%;
@@ -488,15 +409,15 @@
         max-width: 100%;
     }
     
-    .exercises-title {
-        font-size: 22px;
-        margin-bottom: 16px;
-    }
-    
     .exercises-grid {
         grid-template-columns: 1fr;
         gap: 0;
         margin-bottom: 30px;
+    }
+    
+    .exercises-title {
+        font-size: 22px;
+        margin-bottom: 16px;
     }
     
     .exercises-list {
@@ -504,7 +425,7 @@
     }
     
     .exercise-item {
-        padding: 16px;
+        padding: 12px 16px;
         border-radius: 12px;
     }
     
@@ -536,6 +457,29 @@
         margin-top: 10px;
     }
     
+    .count-input {
+        width: 65px;
+        height: 36px;
+        font-size: 14px;
+        padding: 0 8px;
+        border-radius: 10px;
+    }
+    
+    .count-input::-webkit-inner-spin-button,
+    .count-input::-webkit-outer-spin-button {
+        width: 14px;
+        height: 14px;
+    }
+    
+    .modal-exercise-count {
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .count-label {
+        font-size: 13px;
+    }
+    
     /* Модальные окна */
     .modal {
         width: 95%;
@@ -555,12 +499,6 @@
     }
     
     .modal-exercise-name {
-        font-size: 14px;
-    }
-    
-    .count-input {
-        width: 70px;
-        height: 36px;
         font-size: 14px;
     }
     
@@ -617,16 +555,24 @@
         font-size: 13px;
     }
     
+    .count-input {
+        width: 60px;
+        height: 34px;
+        font-size: 13px;
+    }
+    
+    .count-input::-webkit-inner-spin-button,
+    .count-input::-webkit-outer-spin-button {
+        width: 12px;
+        height: 12px;
+    }
+    
     .modal-title {
         font-size: 20px;
         padding: 16px 16px 12px 16px;
     }
     
     .modal-exercise-name {
-        font-size: 13px;
-    }
-    
-    .count-label {
         font-size: 13px;
     }
     
