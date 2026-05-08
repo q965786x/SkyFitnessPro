@@ -63,12 +63,20 @@ export default function Header() {
         dispatch(openSigninModal());
     };
 
+    const handleLogoClick = () => {
+        router.push('/workout/main');
+    };
+
 
     if (isLoading) {
         return (
             <div className={styles['header-nav']}>
                 <div className={styles['logo-area']}>
-                    <div className={styles.logo}>
+                    <div 
+                        className={styles.logo}
+                        onClick={handleLogoClick}
+                        style={{ cursor: 'pointer' }}
+                    >
                         <Image
                             width={220}
                             height={35}
@@ -92,7 +100,11 @@ export default function Header() {
         return (
             <div className={styles['header-nav']}>
                 <div className={styles['logo-area']}>
-                    <div className={styles.logo}>
+                    <div 
+                        className={styles.logo}
+                        onClick={handleLogoClick}
+                        style={{ cursor: 'pointer' }}
+                    >
                         <Image
                             width={220}
                             height={35}
@@ -119,7 +131,11 @@ export default function Header() {
     return (
         <div className={styles['header-nav']}>
             <div className={styles['logo-area']}>
-                <div className={styles.logo}>
+                <div 
+                    className={styles.logo}
+                    onClick={handleLogoClick}
+                    style={{ cursor: 'pointer' }}
+                >
                     <Image
                         width={220}
                         height={35}
