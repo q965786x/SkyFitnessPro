@@ -26,7 +26,10 @@ export const registerUser = ({ email, password }: registerUserProps) => {
         },
         data,
     })    
-    .catch(error => {        
+    .catch(error => { 
+        if (error.response?.data?.message) {
+            throw new Error(error.response.data.message);
+        }       
         throw error;
     });
 };
@@ -53,7 +56,10 @@ export const loginUser = ({ email, password }: loginUserProps) => {
         }
         return response;
     })
-    .catch(error => {        
+    .catch(error => { 
+        if (error.response?.data?.message) {
+            throw new Error(error.response.data.message);
+        }       
         throw error;
     });
 };
