@@ -99,8 +99,9 @@ export default function SigninModal({ onLoginSuccess }: SigninModalProps) {
         } catch {
             dismiss(loadingToast);
             setHasError(true);
-            setErrorMessage(authError || 'Ошибка входа. Проверьте email и пароль');
-            showError(authError || 'Ошибка входа. Проверьте email и пароль');
+            const errorText = authError || 'Ошибка входа. Проверьте email и пароль';
+            setErrorMessage(errorText);
+            showError(errorText);
         }
     };
 

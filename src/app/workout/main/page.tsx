@@ -2,21 +2,21 @@
 
 import styles from './page.module.css';
 import Image from 'next/image';
+import Header from '@/components/Header/Header';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { openSigninModal } from '@/store/slices/uiSlice';
 import { sortCoursesByOrder } from '@/utils/courseSort';
 import { 
   fetchAllCourses, 
   fetchUserCourses 
 } from '@/store/slices/coursesSlice';
-import { logout } from '@/store/slices/authSlice';
 import CourseImage from '@/components/CourseImage/CourseImage';
 import SigninModal from '@/components/AuthModal/SigninModal';
 import SignupModal from '@/components/AuthModal/SignupModal';
 import dynamic from 'next/dynamic';
 import 'react-loading-skeleton/dist/skeleton.css';
+
 
 type Course = {
   _id: string;
@@ -62,17 +62,17 @@ export default function MainPage() {
       }
     };
 
-    loadData();
-  }, [dispatch, isAuthorized]);
-    
+    if (!authLoading) {
+      loadData();
+    }
+  }, [dispatch, isAuthorized, , authLoading]);    
   
   useEffect(() => {
     if (allCourses.length > 0) {
       const sortedCourses = sortCoursesByOrder(allCourses);
       setCourses(sortedCourses);
     }
-  }, [allCourses]);
-  
+  }, [allCourses]);  
   
   const scrollToTop = () => {
     window.scrollTo({
@@ -80,22 +80,13 @@ export default function MainPage() {
       behavior: 'smooth'
     });
   };
-
-  
-  const handleLogout = () => {
-    dispatch(logout());
-    router.push('/workout/main');
-  };
-
   
   const handleCardClick = (courseId: string) => {
     router.push(`/workout/course/${courseId}`);
   };
-
   
   const handleIconClick = (e: React.MouseEvent, courseId: string) => {
     e.stopPropagation();
-
     localStorage.setItem('pendingCourseId', courseId);    
     router.push(`/workout/course/${courseId}`);
   };
@@ -113,39 +104,7 @@ export default function MainPage() {
     return (
       <div className={styles['main-container']}>
           <div className={styles['page-content']}>          
-            <div className={styles['header-nav']}>
-              <div className={styles['logo-area']}>
-                <div className={styles.logo}>
-                  <Image 
-                    width={220}
-                    height={35}
-                    className={styles['logo__image']}
-                    src="/img/logo.png"
-                    alt={'logo'}
-                    loading="eager"
-                    priority
-                  />
-                </div>
-                <div className={styles['logo-subtitle']}>
-                  Онлайн-тренировки для занятий дома
-                </div>
-              </div>
-              {isAuthorized ? (
-                <button 
-                  className={styles['logout-btn']} 
-                  onClick={handleLogout}
-                >
-                  Выйти
-                </button>
-              ) : (
-                <button 
-                  className={styles['login-btn']} 
-                  onClick={() => dispatch(openSigninModal())}
-                >
-                  Войти
-                </button>
-              )}
-            </div>
+            <Header />
             
             <div className={styles['title-section']}>
               <h1 className={styles['main-title']}>Начните заниматься спортом и улучшите качество жизни</h1>
@@ -157,11 +116,11 @@ export default function MainPage() {
                     src="/img/badge.png"
                     alt={'badge'}
                     loading="eager"
+                    priority
                   />
               </div>
             </div>
-
-            {/* Скелетон показывается только при загрузке */}
+            
             <MainPageSkeleton />
           </div>
         </div>
@@ -172,39 +131,7 @@ export default function MainPage() {
     <>
       <div className={styles['main-container']}>
         <div className={styles['page-content']}>          
-          <div className={styles['header-nav']}>
-            <div className={styles['logo-area']}>
-              <div className={styles.logo}>
-                <Image 
-                  width={220}
-                  height={35}
-                  className={styles['logo__image']}
-                  src="/img/logo.png"
-                  alt={'logo'}
-                  loading="eager"
-                  priority
-                />
-              </div>
-              <div className={styles['logo-subtitle']}>
-                Онлайн-тренировки для занятий дома
-              </div>
-            </div>
-            {isAuthorized ? (
-              <button 
-                className={styles['logout-btn']} 
-                onClick={handleLogout}
-              >
-                Выйти
-              </button>
-            ) : (
-              <button 
-                className={styles['login-btn']} 
-                onClick={() => dispatch(openSigninModal())}
-              >
-                Войти
-              </button>
-            )}
-          </div>
+          <Header />
           
           <div className={styles['title-section']}>
             <h1 className={styles['main-title']}>Начните заниматься спортом и улучшите качество жизни</h1>
@@ -216,6 +143,7 @@ export default function MainPage() {
                   src="/img/badge.png"
                   alt={'badge'}
                   loading="eager"
+                  priority
                 />
             </div>
           </div>          
